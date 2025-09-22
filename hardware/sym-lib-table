@@ -1,0 +1,9 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "2025-07-17_19-21-54")(type "KiCad")(uri "${KIPRJMOD}/2025-07-17_19-21-54.kicad_sym")(options "")(descr ""))
+  (lib (name "MT41J128M16JT-125_KTR")(type "KiCad")(uri "${KIPRJMOD}/MT41J128M16JT-125_KTR.kicad_sym")(options "")(descr ""))
+  (lib (name "MT29F2G08ABAEAWP-AATX_E_TR")(type "KiCad")(uri "${KIPRJMOD}/MT29F2G08ABAEAWP-AATX_E_TR.kicad_sym")(options "")(descr ""))
+  (lib (name "LSF0102DCTR")(type "KiCad")(uri "${KIPRJMOD}/LSF0102DCTR.kicad_sym")(options "")(descr ""))
+  (lib (name "TLV62130RGTR")(type "KiCad")(uri "${KIPRJMOD}/TLV62130RGTR.kicad_sym")(options "")(descr ""))
+  (lib (name "EMMC04G-S100-B08U")(type "KiCad")(uri "${KIPRJMOD}/EMMC04G-S100-B08U.kicad_sym")(options "")(descr ""))
+)

@@ -1,0 +1,156 @@
+(footprint "LED_antminer"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "Datasheet can be found at https://www.gme.cz/data/attachments/dsh.511-795.1.pdf")
+	(tags "LED automotive super flux 7.62mm")
+	(property "Reference" "REF**"
+		(at 1 5.5 0)
+		(layer "F.SilkS")
+		(uuid "b7bf626a-a301-4360-b54c-3ac476a139de")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "LED_antminer"
+		(at 3.81 7.62 0)
+		(layer "F.Fab")
+		(uuid "1a5fdcd9-af6e-48ad-8683-4f3962b2af08")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "e5264d44-1eb4-45ea-a9b6-40c8f684d9ea")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "821fdd32-8b8c-4d90-9f24-2caa9422173e")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr through_hole)
+	(fp_rect
+		(start -1.5 -2)
+		(end 3.5 4)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "824abc40-49d7-4ee3-92dc-b994054325fc")
+	)
+	(fp_rect
+		(start -0.5 -3)
+		(end 2.5 -2)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.SilkS")
+		(uuid "12d6e9a9-52ea-4ba3-bee8-7fb8301255a4")
+	)
+	(fp_rect
+		(start -2.5 -2)
+		(end 4.5 5)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "f1d590ab-a436-4beb-a348-e895834a602a")
+	)
+	(fp_rect
+		(start -1 -1.5)
+		(end 3 3.5)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "0fd665ea-a79a-41ee-9954-e44ce2e7804d")
+	)
+	(fp_text user "${REFERENCE}"
+		(at -2.286 -1.27 0)
+		(layer "F.Fab")
+		(uuid "25252ff8-5db7-4725-98c2-86b1c9b660a0")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "1" thru_hole rect
+		(at 2 0)
+		(size 1.5 1.8)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "a6127381-f337-4434-9d7b-4893883c2dd8")
+	)
+	(pad "2" thru_hole circle
+		(at 0 0)
+		(size 1.5 1.5)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "109a18b0-347f-4af1-83b6-b2874bd28c15")
+	)
+	(pad "3" thru_hole circle
+		(at 2 2)
+		(size 1.5 1.5)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "67673a62-5957-4fde-b32c-81e71638a291")
+	)
+	(pad "4" thru_hole circle
+		(at 0 2)
+		(size 1.5 1.5)
+		(drill 0.8)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "de99ea5f-948e-4f55-a655-f0fa893877d4")
+	)
+	(embedded_fonts no)
+	(model "${KICAD9_3DMODEL_DIR}/LED_THT.3dshapes/LED_Rectangular_W7.62mm_H4.55mm_P5.08mm_R3.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)

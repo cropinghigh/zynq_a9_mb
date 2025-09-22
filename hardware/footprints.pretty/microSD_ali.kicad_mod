@@ -1,0 +1,281 @@
+(footprint "microSD_ali"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "F.Cu")
+	(descr "1.10mm Pitch microSD Card Connector, Hinge Type, https://www.molex.com/pdm_docs/sd/472192001_sd.pdf")
+	(tags "Micro SD")
+	(property "Reference" "REF**"
+		(at 0 -8.5 0)
+		(unlocked yes)
+		(layer "F.SilkS")
+		(uuid "ece6a42a-27d6-4909-bfa8-c0f37f67fe09")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Value" "microSD_ali"
+		(at 0 8.5 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "f5ab9da4-cacb-408f-b7f4-24a6725bc729")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "295ee5bd-faba-4dbf-9bc3-11bea7f7343f")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "2574c407-7121-4177-bd13-1bc58114eff3")
+		(effects
+			(font
+				(size 1.27 1.27)
+				(thickness 0.15)
+			)
+		)
+	)
+	(attr smd)
+	(fp_line
+		(start -7.8 -1)
+		(end -7.8 -0.8)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "56dd5e93-c518-4a83-9fa2-51f44cde83b9")
+	)
+	(fp_line
+		(start -7.8 0.8)
+		(end -7.8 8.8)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "e4f273fc-9195-4873-8b07-81f9570d8b58")
+	)
+	(fp_line
+		(start -7.8 11.2)
+		(end -7.8 12)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "5b529674-be8d-48c8-bb8e-aba1983d7f8f")
+	)
+	(fp_line
+		(start -7.8 12)
+		(end 7.8 12)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "6c6b9819-78a2-4678-818d-f290f1381ce6")
+	)
+	(fp_line
+		(start -7.4 -1)
+		(end -7.8 -1)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "e454f500-67b9-4bf9-a688-4332723ec5fe")
+	)
+	(fp_line
+		(start 7.8 -1)
+		(end 2.8 -1)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "243b496c-f388-46e8-a004-94edcf00f11e")
+	)
+	(fp_line
+		(start 7.8 8.8)
+		(end 7.8 -1)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "74b59892-9a43-469d-816e-cd2c7ef7a8c8")
+	)
+	(fp_line
+		(start 7.8 12)
+		(end 7.8 11.2)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "884beda3-1225-4b6e-922c-1b74ce716500")
+	)
+	(fp_rect
+		(start -9.35 -3.1)
+		(end 10 13)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(fill no)
+		(layer "F.CrtYd")
+		(uuid "83276c63-d43d-48c2-bbbd-83ba0af2bb02")
+	)
+	(fp_rect
+		(start -8 -1)
+		(end 7.8 11.8)
+		(stroke
+			(width 0.1)
+			(type default)
+		)
+		(fill no)
+		(layer "F.Fab")
+		(uuid "c9cfb9ca-5a75-449e-8ca4-3d36f50cbcff")
+	)
+	(fp_text user "${REFERENCE}"
+		(at 0 0 0)
+		(unlocked yes)
+		(layer "F.Fab")
+		(uuid "826cb443-06db-4829-a05d-22853bf71a5c")
+		(effects
+			(font
+				(size 1 1)
+				(thickness 0.15)
+			)
+		)
+	)
+	(pad "" np_thru_hole circle
+		(at -4.95 10)
+		(size 1 1)
+		(drill 1)
+		(layers "F&B.Cu")
+		(uuid "75459e1d-efb3-4385-b706-66def5522613")
+	)
+	(pad "" np_thru_hole circle
+		(at 3.05 10)
+		(size 1 1)
+		(drill 1)
+		(layers "F&B.Cu")
+		(uuid "994522ae-3675-4807-aa97-bee40636c6d6")
+	)
+	(pad "1" smd rect
+		(at 2.25 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "f3f80fe9-eb05-43ac-af37-11228ef483f7")
+	)
+	(pad "2" smd rect
+		(at 1.15 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "7cc0dff4-21ac-4256-89de-35a3181c1269")
+	)
+	(pad "3" smd rect
+		(at 0.05 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "66a6b198-de46-491a-b1c5-1b5d89027a79")
+	)
+	(pad "4" smd rect
+		(at -1.05 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "fba9aead-09b6-421f-a69f-d03d0456578e")
+	)
+	(pad "5" smd rect
+		(at -2.25 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "5761a424-2071-4f3f-ad47-9af1f4cb5eb2")
+	)
+	(pad "6" smd rect
+		(at -3.35 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "e2b8d7b3-79ff-4ad3-9cb0-62105ef41b6b")
+	)
+	(pad "7" smd rect
+		(at -4.45 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "59a2c789-5851-4033-a7f4-012b0660f50e")
+	)
+	(pad "8" smd rect
+		(at -5.55 -0.5)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "72e42b79-5278-4a89-a677-9d4bb5c579f4")
+	)
+	(pad "9" smd rect
+		(at -6.65 -0.55)
+		(size 0.7 1.7)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(uuid "873d0ef3-16da-405d-b15e-71a2a930ff32")
+	)
+	(pad "10" smd roundrect
+		(at -7.75 0)
+		(size 1.2 1.4)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "90b2355e-fdda-44d4-af24-227a5fc01bd9")
+	)
+	(pad "10" smd roundrect
+		(at 6.85 0)
+		(size 1.6 1.4)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "0b8735af-5d5e-40e7-9373-cbc3ee28782f")
+	)
+	(pad "11" smd roundrect
+		(at -7.75 10)
+		(size 1.2 2.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "8c01231e-9021-4782-bce4-ce4f105a3908")
+	)
+	(pad "11" smd roundrect
+		(at 7.75 10)
+		(size 1.2 2.2)
+		(layers "F.Cu" "F.Mask" "F.Paste")
+		(roundrect_rratio 0.25)
+		(uuid "85ac109c-7655-4147-b9e6-7d3d3cb69f5b")
+	)
+	(embedded_fonts no)
+	(model "${KICAD9_3DMODEL_DIR}/Connector_Card.3dshapes/microSD_HC_Molex_47219-2001.step"
+		(offset
+			(xyz 0 0 0)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
+)
