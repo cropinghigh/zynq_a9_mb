@@ -2,8 +2,8 @@
 
 ## Hardware:
 
-![3d rendered PCB front](hardware/3d_view_f.png)
-![3d rendered PCB back](hardware/3d_view_b.png)
+![3d rendered PCB front](images/3d_view_f.png)
+![3d rendered PCB back](images/3d_view_b.png)
 
 ### Features:
 - Most expensive components can be salvaged from dirt cheap miner boards
@@ -42,7 +42,7 @@ TODO
 
 ### Building from source
 
-Replace -j4 with the number of cores your CPU have. Pre-build binaries for each stage are present in subsequent directories, so each of those steps are not neccesary.
+Replace -j4 with the number of cores your CPU have. Pre-built binaries for each stage are present in subsequent directories, so those steps are not neccesary.
 
 1. Building fsbl
 
@@ -124,7 +124,7 @@ Replace -j4 with the number of cores your CPU have. Pre-build binaries for each 
 
     If you want to create brand new debian rootfs, run "bootstrap.sh" script in software/ROOTFS. It will erase contents of ./fs directory and populate it with new debian system using debootstrap. Then it will run second stage using chroot, and give you the shell, so you can install and configure anything you need. Keep in mind that to do that you will need a linux system that's capable of running different architecture binaries, for example using qemu. More info on that on the internet (qemu-user-static,qemu-user-static-binfmt and qemu-system-arm).
 
-    After finishing the configuration, run "compress.sh" from software/ROOTFS to create .tar.bz2 filesystem image. After that you can safely delete ./fs directory, and later restore it using "decompress.sh" script.
+    After finishing the configuration, run "compress.sh" from software/ROOTFS to create .tar.bz2 filesystem image. After that you can safely delete everything in ./fs directory, and later restore it using "decompress.sh ./fs" script.
 
     If you want to access decompressed system image shell again, just run
 

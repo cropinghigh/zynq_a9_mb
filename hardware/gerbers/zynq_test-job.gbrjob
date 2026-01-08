@@ -5,13 +5,13 @@
       "Application": "Pcbnew",
       "Version": "9.0.2"
     },
-    "CreationDate": "2025-09-23T00:01:26+03:00"
+    "CreationDate": "2026-01-08T17:16:56+03:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
       "Name": "zynq_test",
       "GUID": "7a796e71-5f74-4657-9374-2e6b69636164",
-      "Revision": "1.1"
+      "Revision": "1.2"
     },
     "Size": {
       "X": 99.55,

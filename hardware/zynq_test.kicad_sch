@@ -6,8 +6,8 @@
 	(paper "A0")
 	(title_block
 		(title "ZYNQ_A9_MB")
-		(date "2025-09-22")
-		(rev "1.1")
+		(date "2026-01-08")
+		(rev "1.2")
 		(comment 2 "IND1R")
 		(comment 7 "Zynq 7z010 dev/main board with main components from Antminer S9 control board")
 	)
