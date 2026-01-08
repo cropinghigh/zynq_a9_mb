@@ -1,0 +1,85 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+
+%YAML 1.2
+---
+title: Bindings for xilsecure library.
+
+maintainers:
+  - Akula, Kalyani <kalyani.akula@amd.com>
+  - Challa, Durga <durga.challa@amd.com>
+  - Harsha, Harsha <harsha.harsha@amd.com>
+
+type: library
+
+description: Xilinx Secure Library provides interface to AES, RSA and SHA hardware engines on ZynqMP Soc and Versal.
+
+supported_processors:
+  - microblaze
+  - psu_pmu
+  - psu_cortexr5
+  - psu_cortexa53
+  - psv_pmc
+  - psv_cortexa72
+  - psv_cortexr5
+  - psx_pmc
+  - pmc
+  - psx_cortexa78
+  - cortexa78
+  - psx_cortexr52
+  - cortexr52
+  - microblaze_riscv
+
+supported_os:
+  - standalone
+  - freertos10_xilinx
+
+examples:
+  xilsecure_aes_example.c:
+  xilsecure_rsa_example.c:
+  xilsecure_rsa_generic_example.c:
+  xilsecure_sha_example.c:
+  xilsecure_simple_aes_example.c:
+  xilsecure_versal_aes_client_example.c:
+  xilsecure_versal_aes_server_example.c:
+  xilsecure_versal_ecdsa_client_example.c:
+  xilsecure_versal_ecdsa_server_example.c:
+  xilsecure_versal_net_trng_client_example.c:
+  xilsecure_versal_net_ecdh_client_example.c:
+  xilsecure_versal_rsa_client_example.c:
+  xilsecure_versal_net_rsa_client_example.c:
+  xilsecure_versal_rsa_server_example.c:
+  xilsecure_versal_sha_client_example.c:
+  xilsecure_versal_sha_server_example.c:
+  xilsecure_spartanup_sha_server_example.c:
+  xilsecure_versal_2ve_2vm_sha_client_example.c:
+  xilsecure_versal_net_keyunwrap_client_example.c:
+
+  condition: |
+    examples = []
+    if platform in ["ZynqMP"]:
+      if proc in ["psu_cortexa53", "psu_cortexr5"]:
+        examples += ["xilsecure_aes_example.c", "xilsecure_rsa_example.c", "xilsecure_rsa_generic_example.c", "xilsecure_sha_example.c",
+                     "xilsecure_simple_aes_example.c"]
+    if platform in ["Versal", "VersalNet", "Versal_2VE_2VM"]:
+      if proc in ["microblaze", "psv_cortexa72", "psv_cortexr5", "psx_cortexa78", "psx_cortexr52", "cortexa78", "cortexr52"]:
+        examples += ["xilsecure_versal_aes_client_example.c", "xilsecure_versal_ecdsa_client_example.c", "xilsecure_versal_rsa_client_example.c"]
+    if platform in ["Versal", "VersalNet"]:
+      if proc in ["microblaze", "psv_cortexa72", "psv_cortexr5", "psx_cortexa78", "psx_cortexr52"]:
+        examples += ["xilsecure_versal_sha_client_example.c"]
+    if platform in ["Versal"]:
+      if proc in ["microblaze", "psv_cortexa72", "psv_cortexr5"]:
+        examples += ["xilsecure_versal_ecdsa_server_example.c", "xilsecure_versal_rsa_server_example.c", "xilsecure_versal_sha_server_example.c",
+                     "xilsecure_versal_aes_server_example.c"]
+    if platform in ["VersalNet"]:
+      if proc in ["microblaze", "psx_cortexa78", "psx_cortexr52"]:
+        examples += ["xilsecure_versal_net_rsa_client_example.c", "xilsecure_versal_net_keyunwrap_client_example.c"]
+    if platform in ["Versal_2VE_2VM"]:
+      if proc in ["microblaze", "cortexa78", "cortexr52"]:
+        examples += ["xilsecure_versal_2ve_2vm_sha_client_example.c"]
+    if platform in ["VersalNet", "Versal_2VE_2VM"]:
+      if proc in ["microblaze", "psx_cortexa78", "psx_cortexr52", "cortexa78", "cortexr52"]:
+        examples += ["xilsecure_versal_net_trng_client_example.c", "xilsecure_versal_net_ecdh_client_example.c"]
+    if "spartanuplus" in variant:
+      if proc in ["microblaze", "microblaze_riscv"]:
+        examples += ["xilsecure_spartanup_sha_server_example.c", "xilsecure_versal_aes_server_example.c"]

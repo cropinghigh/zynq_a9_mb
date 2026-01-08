@@ -1,0 +1,473 @@
+/******************************************************************************
+* Copyright (c) 2019 - 2022 Xilinx, Inc. All rights reserved.
+* Copyright (c) 2022 - 2025 Advanced Micro Devices, Inc. All Rights Reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+
+
+/*****************************************************************************/
+/**
+*
+* @file xplmi.c
+*
+* This file contains the PLMI module register functions.
+*
+* <pre>
+* MODIFICATION HISTORY:
+*
+* Ver   Who  Date        Changes
+* ----- ---- -------- -------------------------------------------------------
+* 1.00  kc   02/07/2019 Initial release
+* 1.01  ma   08/01/2019 Added LPD init code
+* 1.02  kc   02/19/2020 Moved code to support PLM banner from PLM app
+*       bsv  04/04/2020 Code clean up
+* 1.03  bsv  07/07/2020 Made functions used in single transaltion unit as
+*						static
+*       kc   07/28/2020 Moved LpdInitialized from xplmi_debug.c to xplmi.c
+*       bm   09/08/2020 Added RunTime Configuration Init API to XPlmi_Init
+*       bm   10/14/2020 Code clean up
+*       td   10/19/2020 MISRA C Fixes
+* 1.04  bm   10/28/2020 Added ROM Version Print
+*       har  03/17/2021 Added code for run time initialization of Secure State
+*                       registers
+*       ma   03/24/2021 Print early logs
+*       bm   03/24/2021 Added RTCA initialization for Error Status registers
+*       har  03/31/2021 Added RTCA initialization for PDI ID
+*       bsv  04/16/2021 Add provision to store Subsystem Id in XilPlmi
+*       bm   05/05/2021 Added USR_ACCESS support for PLD0 image
+*       ma   05/21/2021 Copy secure boot state from PMC GLOBAL GEN STORAGE2
+                        register to RTCA Secure State offset
+* 1.05  td   07/08/2021 Fix doxygen warnings
+*       bsv  07/18/2021 Print PLM banner at the beginning of PLM execution
+*       bsv  07/24/2021 Clear RTC area at the beginning of PLM
+*       bsv  08/02/2021 Code clean up to reduce elf size
+*       rb   07/29/2021 Update reset reason during Init
+*       ma   08/23/2021 Do not clear Debug Log RTCA memory
+*       ma   09/13/2021 Set PLM prints log level during RTCA init
+*       tnt  11/11/2021 Add RTCA initialization for MIO Flush routine
+*       tnt  12/17/2021 Add RTCA initialization for PL_POR HDIO WA
+* 1.06  bm   07/06/2022 Refactor versal and versal_net code
+*       kpt  07/19/2022 Added APIs to update or get KAT status from RTC area
+*       bm   07/22/2022 Update EAM logic for In-Place PLM Update
+* 1.07  ng   11/11/2022 Updated doxygen comments
+*       kpt  01/04/2023 Added XPlmi_SetFipsKatMask command
+*       bm   01/14/2023 Remove bypassing of PLM Set Alive during boot
+*       bm   03/11/2023 Added status check for XPlmi_PreInit
+* 1.08  sk   07/18/2023 Warn out for uart init fail
+*       sk   07/26/2023 Added redundant check for XPlmi_IsPlmUpdateDone
+*       dd   09/12/2023 MISRA-C violation Rule 10.3 fixed
+* 1.09  ma   10/10/2023 Enable Slave Error for PSM_GLOBAL
+*       ng   01/28/2024 optimized u8 variables
+*       sk   02/18/2024 Added DDRMC Calib Check Status RTCA Register Init
+*       ng   03/20/2024 Added print to UART on log buffer full after LPD init
+* 1.10  sk   06/05/2024 Added code to populate PLM version in RTCA Reg
+*       mss  06/13/2024 Added timestamp banner conditionally
+*       bm   07/15/2024 Fixed timestamp print in banner
+* 1.11  sk   02/20/2025 Added EAM error config in LPDSLCR for Versal 2VE
+*                       and 2VM Devices
+*       pre  08/21/2025 Added TPM initialization after LPD initialization
+*       pre  09/08/2025 Added logic to avoid flooding of log buffer with repeated error messages
+*
+* </pre>
+*
+* @note
+*
+******************************************************************************/
+
+/**
+ * @addtogroup xilplmi_server_apis XilPlmi server APIs
+ * @{
+ */
+
+/***************************** Include Files *********************************/
+#include "xplmi.h"
+#include "xplmi_debug.h"
+#include "xplmi_err_common.h"
+#include "xplmi_wdt.h"
+#include "xplmi_hw.h"
+#include "xplmi_plat.h"
+#include "xplmi_wdt.h"
+#include "xil_util.h"
+#include "xplmi_err.h"
+#ifdef PLM_TPM
+#include "xtpm.h"
+#endif
+
+/************************** Constant Definitions *****************************/
+
+/**************************** Type Definitions *******************************/
+
+/***************** Macros (Inline Functions) Definitions *********************/
+
+/************************** Function Prototypes ******************************/
+static void XPlmi_PrintEarlyLog(void);
+
+/************************** Variable Definitions *****************************/
+
+/******************************************************************************/
+/**
+ * @brief	This function will initialize the PLMI module.
+ *
+ * @return
+ *			- XST_SUCCESS on success.
+ *			- XPLMI_ERR_PRE_INIT if pre initialization fails.
+ *
+ ****************************************************************************/
+int XPlmi_Init(void)
+{
+	int Status = XST_FAILURE;
+
+	Status = XPlmi_PreInit();
+	if (Status != XST_SUCCESS) {
+		Status = XPlmi_UpdateStatus(XPLMI_ERR_PRE_INIT, Status);
+		goto END;
+	}
+
+	Status = XPlmi_SetUpInterruptSystem();
+	if (Status != XST_SUCCESS) {
+		goto END;
+	}
+	XPlmi_GenericInit();
+	Xil_RegisterPlmHandler(XPlmi_SetPlmLiveStatus);
+
+END:
+	return Status;
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function initializes the Runtime Configuration Area with
+ * default values.
+ *
+ * @return	XST_SUCCESS on success and error code on failure
+ *
+ *****************************************************************************/
+int XPlmi_RunTimeConfigInit(void)
+{
+	int Status = XST_FAILURE;
+	u32 DevSecureState = XPlmi_In32(PMC_GLOBAL_GLOBAL_GEN_STORAGE2);
+	u32 PlmVersion;
+
+	/* In-Place PLM Update is applicable only for versalnet */
+	if ((XPlmi_IsPlmUpdateDone() == (u8)TRUE) || (XPlmi_IsPlmUpdateDoneTmp() == (u8)TRUE)) {
+		XPlmi_Out32(XPLMI_RTCFG_SECURE_STATE_ADDR, DevSecureState);
+		Status = XST_SUCCESS;
+		goto END;
+	}
+
+	/**
+	 * Clear the Runtime configuration area
+	*/
+	Status = XPlmi_MemSet((u64)XPLMI_RTCFG_BASEADDR, 0U,
+		(XPLMI_RTCFG_DBG_LOG_BUF_OFFSET >> XPLMI_WORD_LEN_SHIFT));
+	if (Status != XST_SUCCESS) {
+		goto END;
+	}
+
+	Status = XPlmi_MemSet((u64)(XPLMI_RTCFG_BASEADDR + XPLMI_RTCFG_LOG_UART_OFFSET),
+		0U,	((XPLMI_RTCFG_SIZE - XPLMI_RTCFG_LOG_UART_OFFSET)
+				>> XPLMI_WORD_LEN_SHIFT));
+	if (Status != XST_SUCCESS) {
+		goto END;
+	}
+
+	/**
+	 * Set the default PLM Run time configuration values
+	*/
+	XPlmi_Out32(XPLMI_RTCFG_RTCA_ADDR, XPLMI_RTCFG_IDENTIFICATION);
+	XPlmi_Out32(XPLMI_RTCFG_VERSION_ADDR, XPLMI_RTCFG_VER);
+	XPlmi_Out32(XPLMI_RTCFG_SIZE_ADDR, XPLMI_RTCFG_SIZE);
+	XPlmi_Out32(XPLMI_RTCFG_IMGINFOTBL_ADDRLOW_ADDR,
+				XPLMI_IMAGE_INFO_TBL_BUFFER_ADDR);
+	XPlmi_Out32(XPLMI_RTCFG_IMGINFOTBL_ADDRHIGH_ADDR,
+				XPLMI_RTCFG_IMGINFOTBL_ADDR_HIGH);
+	XPlmi_Out32(XPLMI_RTCFG_IMGINFOTBL_LEN_ADDR,
+				XPLMI_RTCFG_IMGINFOTBL_LEN);
+	XPlmi_Out32(XPLMI_RTCFG_SECURESTATE_AHWROT_ADDR,
+				XPLMI_RTCFG_SECURESTATE_AHWROT);
+	XPlmi_Out32(XPLMI_RTCFG_SECURESTATE_SHWROT_ADDR,
+				XPLMI_RTCFG_SECURESTATE_SHWROT);
+	XPlmi_Out32(XPLMI_RTCFG_PDI_ID_ADDR, XPLMI_RTCFG_PDI_ID);
+	XPlmi_Out32(XPLMI_RTCFG_SECURE_STATE_ADDR, DevSecureState);
+	XPlmi_Out32(XPLMI_RTCFG_IMG_STORE_ADDRESS_HIGH, XPLMI_RTCFG_IMG_STORE_ADDRESS_HIGH_INVALID);
+	XPlmi_Out32((XPLMI_RTCFG_IMG_STORE_ADDRESS_LOW), XPLMI_RTCFG_IMG_STORE_ADDRESS_LOW_INVALID);
+	XPlmi_Out32(XPLMI_RTCFG_IMG_STORE_SIZE, XPLMI_RTCFG_IMG_STORE_SIZE_INVALID);
+	XPlmi_Out32(XPLMI_RTCFG_DDRMC_CALIB_CHECK_SKIP_ADDR,
+				XPLMI_RTCFG_INIT_DDRMC_CALIB_CHECK);
+
+	/**
+	 * Initialize platform specific RTCA Registers
+	 */
+	XPlmi_RtcaPlatInit();
+
+	/* Set PLM prints log level */
+	DebugLog->LogLevel = ((u8)XPlmiDbgCurrentTypes << XPLMI_LOG_LEVEL_SHIFT) |
+		(u8)XPlmiDbgCurrentTypes;
+
+END:
+	PlmVersion = ((XPLMI_PLM_MAJOR_VERSION << XPLMI_PLM_MAJOR_VERSION_SHIFT) |
+			(XPLMI_PLM_MINOR_VERSION << XPLMI_PLM_MINOR_VERSION_SHIFT) |
+			(XPLMI_PLM_RC_VERSION << XPLMI_PLM_RC_VERSION_SHIFT) |
+			(XPLMI_PLM_USER_DEFINED_VERSION));
+
+	XPlmi_Out32(XPLMI_RTCFG_PLM_VERSION_ADDR, PlmVersion);
+	return Status;
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function calls all the PS LPD init functions of all the
+ * different modules. As a part of init functions, modules can register the
+ * command handlers, interrupt handlers with the interface layer.
+ *
+ *****************************************************************************/
+void XPlmi_LpdInit(void)
+{
+	int Status = XST_FAILURE;
+
+#ifdef DEBUG_UART_PS
+	Status = XPlmi_InitUart();
+	if (Status != XST_SUCCESS) {
+		Status |=  XPLMI_WARNING_MAJOR_MASK;
+		XPlmi_LogPlmErr(Status);
+	}
+#endif
+	/* For versal, PLM Update is not applicable, and this API returns FALSE */
+	if (XPlmi_IsPlmUpdateDone() != (u8)TRUE) {
+	#ifndef VERSAL_2VE_2VM
+		Status = XPlmi_PsEmInit();
+	#else
+		Status = XPlmi_LpdSlcrEmInit();
+	#endif
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+
+	#if (defined(versal) && defined(PLM_TPM))
+		/* TPM module is applicable only for Versal */
+		Status = (int)XTpm_Init();
+		if (Status != XST_SUCCESS) {
+			Status = XPlmi_UpdateStatus(XPLMI_ERR_TPM_INIT, Status);
+			goto END;
+		}
+	#endif
+		XPlmi_SetLpdInitialized(LPD_INITIALIZED);
+	#ifndef VERSAL_2VE_2VM
+		/**
+		 * Enable Slave Error for PSM Global
+		 */
+		XPlmi_UtilRMW(PSM_GLOBAL_REG_BASEADDR,
+				PSM_GLOBAL_REG_GLOBAL_CNTRL_SLVERR_ENABLE_MASK,
+				PSM_GLOBAL_REG_GLOBAL_CNTRL_SLVERR_ENABLE_MASK);
+	#endif
+		XPlmi_PrintEarlyLog();
+	}
+
+END:
+	if (Status != XST_SUCCESS) {
+		XPlmi_ErrMgr(Status);
+	}
+	return;
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function prints PLM banner
+ *
+ *****************************************************************************/
+void XPlmi_PrintPlmBanner(void)
+{
+	u32 Version;
+	u32 PsVersion;
+	u32 PmcVersion;
+	u32 BootMode;
+	u32 MultiBoot;
+	u32 PmcVersionDecimal;
+
+	/* Print the PLM Banner */
+	XPlmi_Printf(DEBUG_PRINT_ALWAYS,
+		"****************************************\n\r");
+	XPlmi_Printf(DEBUG_PRINT_ALWAYS, XPLMI_PLM_BANNER);
+	XPlmi_Printf(DEBUG_PRINT_ALWAYS,
+		"Release %s.%s",SDK_RELEASE_YEAR, SDK_RELEASE_QUARTER);
+	#ifndef PLM_BANNER_TIMESTAMP_EXCLUDE
+		XPlmi_Printf_WoTS(DEBUG_PRINT_ALWAYS, "   %s  -  %s",
+					__DATE__, __TIME__);
+	#endif
+
+	XPlmi_Printf_WoTS(DEBUG_PRINT_ALWAYS, "\n\r");
+
+	/* For versal, PLM Update is not applicable, and this API returns FALSE */
+	if (XPlmi_IsPlmUpdateDone() != (u8)TRUE) {
+		/* Read the Version */
+		Version = XPlmi_In32(PMC_TAP_VERSION);
+		PsVersion = ((Version & PMC_TAP_VERSION_PS_VERSION_MASK) >>
+				PMC_TAP_VERSION_PS_VERSION_SHIFT);
+		PmcVersion = ((Version & PMC_TAP_VERSION_PMC_VERSION_MASK) >>
+				PMC_TAP_VERSION_PMC_VERSION_SHIFT);
+		BootMode = XPlmi_In32(CRP_BOOT_MODE_USER) &
+				CRP_BOOT_MODE_USER_BOOT_MODE_MASK;
+		MultiBoot = XPlmi_In32(PMC_GLOBAL_PMC_MULTI_BOOT);
+		PmcVersionDecimal = (PmcVersion & XPLMI_PMC_VERSION_MASK);
+		PmcVersion = (PmcVersion >> XPLMI_PMC_VERSION_SHIFT);
+
+		XPlmi_Printf(DEBUG_PRINT_ALWAYS, "Platform Version: v%u.%u "
+			"PMC: v%u.%u, PS: v%u.%u\n\r", PmcVersion, PmcVersionDecimal,
+			PmcVersion, PmcVersionDecimal,
+			(PsVersion >> XPLMI_PMC_VERSION_SHIFT),
+			(PsVersion & XPLMI_PMC_VERSION_MASK));
+		XPlmi_PrintRomVersion();
+		XPlmi_Printf(DEBUG_PRINT_ALWAYS, "BOOTMODE: 0x%x, MULTIBOOT: 0x%x\n\r"
+				, BootMode, MultiBoot);
+	}
+	XPlmi_Printf(DEBUG_PRINT_ALWAYS,
+		"****************************************\n\r");
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function prints early log.
+ *
+ *****************************************************************************/
+static void XPlmi_PrintEarlyLog(void)
+{
+	DebugLog->DiscardLogsAndPrintToBuf = (u8)FALSE;
+
+	/* Print early log */
+	if (DebugLog->LogBuffer.IsBufferFull == (u32)FALSE) {
+		XPlmi_OutByte64(DebugLog->LogBuffer.StartAddr +
+			DebugLog->LogBuffer.Offset, 0U);
+		XPlmi_Printf_WoTS(DEBUG_PRINT_ALWAYS, "%s",
+			(UINTPTR)DebugLog->LogBuffer.StartAddr);
+	}
+	else {
+		XPlmi_PrintPlmBanner();
+		XPlmi_Printf_WoTS(DEBUG_PRINT_ALWAYS, "%.*s",
+			(DebugLog->LogBuffer.Len - DebugLog->LogBuffer.Offset),
+			(UINTPTR)(DebugLog->LogBuffer.StartAddr + DebugLog->LogBuffer.Offset)
+			);
+		XPlmi_Printf_WoTS(DEBUG_PRINT_ALWAYS, "%.*s",
+			DebugLog->LogBuffer.Offset, (UINTPTR)(DebugLog->LogBuffer.StartAddr));
+	}
+	DebugLog->DiscardLogsAndPrintToBuf = (u8)TRUE;
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function resets LpdInitialized variable to 0.
+ *
+ *****************************************************************************/
+void XPlmi_ResetLpdInitialized(void)
+{
+	u32 *LpdInitializedPtr = XPlmi_GetLpdInitialized();
+
+	if ((*LpdInitializedPtr & LPD_WDT_INITIALIZED) == LPD_WDT_INITIALIZED) {
+		XPlmi_DisableWdt(XPLMI_WDT_EXTERNAL);
+	}
+
+	*LpdInitializedPtr = (u32)0U;
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function sets LpdInitialized variable with given flag.
+ *
+ * @param	Flag to set the UART or LPD WDT initialization state.
+ *
+ *****************************************************************************/
+void XPlmi_SetLpdInitialized(u32 Flag)
+{
+	u32 *LpdInitializedPtr = XPlmi_GetLpdInitialized();
+
+	*LpdInitializedPtr |= Flag;
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function clears LpdInitialized variable with given flag.
+ *
+ * @param	Flag to unset the UART or LPD WDT initialization state.
+ *
+ *****************************************************************************/
+void XPlmi_UnSetLpdInitialized(u32 Flag)
+{
+	u32 *LpdInitializedPtr = XPlmi_GetLpdInitialized();
+
+	*LpdInitializedPtr &= (u32)(~Flag);
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function sets XPLMI_RTCFG_PLM_KAT_ADDR with
+ *          PlmKatStatus.
+ *
+ * @param	PlmKatStatus contains the KAT status updated by PLM
+ *
+ *****************************************************************************/
+void XPlmi_UpdateKatStatus(u32 PlmKatStatus)
+{
+	XPlmi_UtilRMW(XPLMI_RTCFG_PLM_KAT_ADDR, XPLMI_KAT_MASK, PlmKatStatus);
+	/* Applicable only for VersalNet */
+	(void)XPlmi_CheckAndUpdateFipsState();
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function is called to get KAT status.
+ *
+ *****************************************************************************/
+u32 XPlmi_GetKatStatus(void)
+{
+	return (XPlmi_In32(XPLMI_RTCFG_PLM_KAT_ADDR) & XPLMI_KAT_MASK);
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function sets XPLMI_RTCFG_PLM_KAT_ADDR  with
+ *          PlmKatMask.
+ *
+ * @param   PlmKatMask contains the kat mask that needs to be set
+ *
+ *****************************************************************************/
+void XPlmi_SetKatMask(u32 PlmKatMask)
+{
+	u32 PlmKatStatus = XPlmi_GetKatStatus();
+
+	PlmKatStatus |= PlmKatMask;
+	XPlmi_UpdateKatStatus(PlmKatStatus);
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function clears XPLMI_RTCFG_PLM_KAT_ADDR with
+ *          PlmKatMask.
+ *
+ * @param   PlmKatMask contains the kat mask that needs to be cleared
+ *
+ *****************************************************************************/
+void XPlmi_ClearKatMask(u32 PlmKatMask)
+{
+	u32 PlmKatStatus = XPlmi_GetKatStatus();
+
+	PlmKatStatus &= ~PlmKatMask;
+	XPlmi_UpdateKatStatus(PlmKatStatus);
+}
+
+/*****************************************************************************/
+/**
+ * @brief	This function will return the crypto kat enable status from efuse
+ *          cache.
+ *
+ * @return
+ *			TRUE  If crypto kat bit is set
+ *			FALSE If crypto kat bit is not set
+ *
+ *****************************************************************************/
+u32 XPlmi_IsCryptoKatEn(void)
+{
+	u32 CryptoKatEn = ((XPlmi_In32(EFUSE_CACHE_MISC_CTRL) &
+						XPLMI_EFUSE_CACHE_CRYPTO_KAT_EN_MASK) >>
+						XPLMI_EFUSE_CACHE_CRYPTO_KAT_EN_SHIFT);
+
+	return CryptoKatEn;
+}

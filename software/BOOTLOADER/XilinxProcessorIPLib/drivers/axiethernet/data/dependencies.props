@@ -1,0 +1,11 @@
+###############################################################################
+# Copyright (C) 2021 - 2022  Xilinx, Inc.  All rights reserved.
+# Copyright (C) 2022 - 2023 Advanced Micro Devices, Inc. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+###############################################################################
+
+xaxiethernet_example_polled.c=xaxiethernet_example_util.c,xaxiethernet_example.h
+xaxiethernet_example_intr_sgdma.c=xaxiethernet_example_util.c,xaxiethernet_example.h
+xaxiethernet_example_intr_fifo.c=xaxiethernet_example_util.c,xaxiethernet_example.h
+xaxiethernet_example_extmulticast.c=xaxiethernet_example_util.c,xaxiethernet_example.h
+xaxiethernet_example_extvlan.c=xaxiethernet_example_util.c,xaxiethernet_example.h

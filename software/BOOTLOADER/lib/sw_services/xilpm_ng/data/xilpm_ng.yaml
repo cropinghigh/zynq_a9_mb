@@ -1,0 +1,43 @@
+# Copyright (C) 2024 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+
+%YAML 1.2
+---
+title: Bindings for xilpm_ng library.
+
+maintainers:
+  - Appana Durga Kedareswara Rao <appanad.durga.rao@xilinx.com>
+  - Madhav Bhatt <madhav.bhatt@amd.com>
+  - Trung Tran <trung.tran@amd.com>
+type: library
+
+version: 1.1
+
+description: Platform Management API Library for Versal_2VE_2VM.
+
+supported_processors:
+  - pmc
+  - cortexa78
+  - cortexr52
+
+
+supported_os:
+  - standalone
+
+# TODO: Need to add remaining driver list which are the dependencies for this
+#       component.
+#       Reasons:
+#               - For other drivers have no effect of "depends" list while
+#               getting added as dependencies.
+#               - Implementation of architecture dependant driver dependency
+#               is pending.
+#       List of remaining drivers:
+#               1) cframe
+#               2) cfupmc
+#               3) iicps
+#               4) usbpsu
+#               5) sdps
+#               6) qspipsu
+#               7) rtcpsu
+#               8) ttcps
+#               9) scugic

@@ -1,0 +1,74 @@
+{
+   "ActiveEmotionalView":"Default View",
+   "Default View_ScaleFactor":"0.960496",
+   "Default View_TopLeft":"437,278",
+   "ExpandedHierarchyInLayout":"",
+   "guistr":"# # String gsaved with Nlview 7.0r4  2019-12-20 bk=1.5203 VDI=41 GEI=36 GUI=JA:10.0 TLS
+#  -string -flagsOSRD
+preplace port DDR -pg 1 -lvl 9 -x 2200 -y -360 -defaultsOSRD
+preplace port FIXED_IO -pg 1 -lvl 9 -x 2200 -y -330 -defaultsOSRD
+preplace port TMDS -pg 1 -lvl 9 -x 2200 -y 770 -defaultsOSRD
+preplace port port-id_clkin -pg 1 -lvl 0 -x -710 -y 580 -defaultsOSRD
+preplace portBus LED_D9 -pg 1 -lvl 9 -x 2200 -y 10 -defaultsOSRD
+preplace portBus LED_D10 -pg 1 -lvl 9 -x 2200 -y 140 -defaultsOSRD
+preplace portBus LED_D11 -pg 1 -lvl 9 -x 2200 -y 250 -defaultsOSRD
+preplace portBus LED_D12 -pg 1 -lvl 9 -x 2200 -y 480 -defaultsOSRD
+preplace inst processing_system7_0 -pg 1 -lvl 1 -x -380 -y -370 -defaultsOSRD
+preplace inst proc_sys_reset_0 -pg 1 -lvl 1 -x -380 -y 60 -defaultsOSRD
+preplace inst proc_sys_reset_1 -pg 1 -lvl 1 -x -380 -y 240 -defaultsOSRD
+preplace inst proc_sys_reset_2 -pg 1 -lvl 1 -x -380 -y 420 -defaultsOSRD
+preplace inst proc_sys_reset_3 -pg 1 -lvl 1 -x -380 -y 600 -defaultsOSRD
+preplace inst c_counter_binary_0 -pg 1 -lvl 4 -x 850 -y 10 -defaultsOSRD
+preplace inst xlslice_0 -pg 1 -lvl 7 -x 1840 -y -50 -defaultsOSRD
+preplace inst rgb2dvi_0 -pg 1 -lvl 8 -x 2070 -y 790 -defaultsOSRD
+preplace inst v_axi4s_vid_out_0 -pg 1 -lvl 6 -x 1550 -y 790 -defaultsOSRD
+preplace inst v_tc_0 -pg 1 -lvl 2 -x 140 -y 860 -defaultsOSRD
+preplace inst axi_vdma_0 -pg 1 -lvl 5 -x 1170 -y 440 -defaultsOSRD
+preplace inst axi_dynclk_0 -pg 1 -lvl 2 -x 140 -y 610 -defaultsOSRD
+preplace inst smartconnect_0 -pg 1 -lvl 5 -x 1170 -y 160 -defaultsOSRD
+preplace inst xlconcat_0 -pg 1 -lvl 2 -x 140 -y 310 -defaultsOSRD
+preplace inst smartconnect_1 -pg 1 -lvl 1 -x -380 -y -820 -defaultsOSRD
+preplace netloc axi_dynclk_0_LOCKED_O 1 2 6 NJ 630 N 630 N 630 1360 640 N 640 1970
+preplace netloc axi_dynclk_0_PXL_CLK_5X_O 1 2 6 NJ 610 N 610 NJ 610 NJ 610 NJ 610 1960
+preplace netloc axi_dynclk_0_PXL_CLK_O 1 1 7 0 520 290J 590 N 590 NJ 590 1370 650 N 650 1940
+preplace netloc axi_vdma_0_mm2s_introut 1 1 5 -10 230 NJ 230 540 240 NJ 240 1360
+preplace netloc c_counter_binary_0_Q 1 4 3 950 -50 N -50 N
+preplace netloc proc_sys_reset_1_interconnect_aresetn 1 0 2 -620 -630 -80
+preplace netloc proc_sys_reset_3_peripheral_reset 1 1 4 -40 470 NJ 470 N 470 970J
+preplace netloc processing_system7_0_FCLK_CLK0 1 0 4 -620 -40 -60 10 N 10 N
+preplace netloc processing_system7_0_FCLK_CLK1 1 0 2 -660 -90 -90
+preplace netloc processing_system7_0_FCLK_CLK2 1 0 2 -680 -100 -140
+preplace netloc processing_system7_0_FCLK_CLK3 1 0 6 -690 -620 -70 380 N 380 N 380 980 550 1390
+preplace netloc processing_system7_0_FCLK_RESET0_N 1 0 2 -630 -80 -100
+preplace netloc processing_system7_0_FCLK_RESET1_N 1 0 2 -640 -70 -110
+preplace netloc processing_system7_0_FCLK_RESET2_N 1 0 2 -650 -60 -120
+preplace netloc processing_system7_0_FCLK_RESET3_N 1 0 2 -670 -50 -130
+preplace netloc v_axi4s_vid_out_0_locked 1 6 3 1730 480 NJ 480 NJ
+preplace netloc v_axi4s_vid_out_0_overflow 1 6 3 1720J 140 NJ 140 N
+preplace netloc v_axi4s_vid_out_0_sof_state_out 1 1 6 -20 500 NJ 500 N 500 960J 570 NJ 570 1700
+preplace netloc v_axi4s_vid_out_0_underflow 1 6 3 1740J 250 NJ 250 N
+preplace netloc v_axi4s_vid_out_0_vtg_ce 1 1 6 -10 510 NJ 510 540 560 NJ 560 N 560 1710
+preplace netloc v_tc_0_irq 1 1 2 0 240 280
+preplace netloc xlconcat_0_dout 1 0 3 -620 -120 NJ -120 290
+preplace netloc xlslice_0_Dout 1 7 2 1970 10 N
+preplace netloc axi_vdma_0_M_AXIS_MM2S 1 5 1 1400 430n
+preplace netloc axi_vdma_0_M_AXI_MM2S 1 4 2 980 80 1390
+preplace netloc processing_system7_0_DDR 1 1 8 NJ -560 N -560 N -560 N -560 N -560 N -560 N -560 2180
+preplace netloc processing_system7_0_FIXED_IO 1 1 8 NJ -540 N -540 N -540 N -540 N -540 N -540 N -540 2170
+preplace netloc processing_system7_0_M_AXI_GP0 1 0 2 -680 -640 -140
+preplace netloc rgb2dvi_0_TMDS 1 8 1 2180 770n
+preplace netloc smartconnect_0_M00_AXI 1 0 6 -680 -110 NJ -110 NJ -110 N -110 NJ -110 1400
+preplace netloc smartconnect_1_M00_AXI 1 1 4 N -900 NJ -900 N -900 960
+preplace netloc smartconnect_1_M01_AXI 1 1 1 -30 -880n
+preplace netloc smartconnect_1_M02_AXI 1 1 1 -50 -860n
+preplace netloc v_axi4s_vid_out_0_vid_io_out 1 6 2 NJ 720 1950
+preplace netloc v_tc_0_vtiming_out 1 2 4 NJ 840 N 840 N 840 1380
+levelinfo -pg 1 -710 -380 140 520 850 1170 1550 1840 2070 2200
+pagesize -pg 1 -db -bbox -sgen -790 -1280 2340 2170
+"
+}
+{
+   "da_board_cnt":"1",
+   "da_clkrst_cnt":"1",
+   "da_ps7_cnt":"1"
+}

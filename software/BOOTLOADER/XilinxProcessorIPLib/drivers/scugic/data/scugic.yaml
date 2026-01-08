@@ -1,0 +1,49 @@
+# Copyright (C) 2023 - 2024 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for SCUGIC controller driver
+
+maintainers:
+  - Mubin Usman Sayyed <mubin.usman.sayyed@xilinx.com>
+
+type: driver
+device_type: interrupt-controller
+
+properties:
+  compatible:
+    OneOf:
+      - items:
+        - enum:
+          - arm,gic-400
+          - arm,cortex-a15-gic
+          - arm,gic-v3
+          - arm,cortex-a9-gic
+          - arm,pl390
+  reg:
+    description: Physical base address and size of the gic controller map
+
+config:
+    - XScuGic_Config
+
+required:
+    - compatible
+    - reg: 2
+    - Handler-table
+
+examples:
+  xscugic_example.c:
+    - reg
+  xscugic_low_level_example.c:
+    - reg
+  xscugic_tapp_example.c:
+    - reg
+
+tapp:
+  xscugic_tapp_example.c:
+    declaration: ScuGicSelfTestExample
+    declaration: ScuGicInterruptSetup
+    hwproperties:
+      - reg
+
+...

@@ -1,0 +1,46 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for HWICAP controller
+
+maintainers:
+  - Manne, Nava kishore <nava.kishore.manne@amd.com>
+
+type: driver
+
+properties:
+  compatible:
+    OneOf:
+      - items:
+        - enum:
+          - xlnx,axi-hwicap
+          - xlnx,axi-hwicap-3.0
+  reg:
+    description: Physical base address and size of the controller register map
+
+config:
+    - XHwIcap_Config
+
+xparam_prefix: HWICAP
+
+required:
+    - compatible
+    - reg
+    - interrupts
+    - interrupt-parent
+    - xlnx,icap-dwidth
+    - xlnx,mode
+
+examples:
+    xhwicap_intr_example.c:
+        - interrupts
+    xhwicap_low_level_example.c:
+        - reg
+    xhwicap_read_config_reg_example.c:
+        - reg
+    xhwicap_read_frame_polled_example.c:
+        - reg
+    xhwicap_testapp_example.c:
+        - reg
+...

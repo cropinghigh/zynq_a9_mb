@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Bitmain Antminer S9 board DTS
+ *
+ * Copyright (C) 2018 Michal Simek
+ * Copyright (C) 2018 VanguardiaSur
+ */
+/dts-v1/;
+#include "zynq-7000.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/leds/common.h>
+
+/ {
+	model = "Bitmain Antminer S9 Board";
+	compatible = "bitmain,antminer-s9", "xlnx,zynq-7000";
+
+	aliases {
+		ethernet0 = &gem0;
+		serial0 = &uart1;
+		mmc0 = &sdhci0;
+		gpio0 = &gpio0;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x40000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		bootcount@efffff0 {
+			reg = <0xefffff0 0x10>;
+			no-map;
+		};
+
+		fpga_space@f000000 {
+			reg = <0xf000000 0x1000000>;
+			no-map;
+		};
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+		led_d2 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "mtd";
+			function = LED_FUNCTION_MTD;
+		};
+		led_d3_r {
+			gpios = <&gpio0 37 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "disk-activity";
+			function = LED_FUNCTION_DISK;
+		};
+		led_d3_g {
+			gpios = <&gpio0 38 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "default-on";
+			function = LED_FUNCTION_POWER;
+		};
+
+	};
+	
+	gpio-keys {
+			compatible = "gpio-keys";
+			autorepeat;
+
+			restart {
+				label = "GPIO Key Restart";
+				linux,code = <0x198>;
+				gpios = <&gpio0 47 GPIO_ACTIVE_LOW>;
+			};
+
+			enter {
+				label = "GPIO Key Enter";
+				linux,code = <28>;
+				gpios = <&gpio0 51 GPIO_ACTIVE_LOW>;
+			};
+	};
+
+	chosen {
+		bootargs = "earlycon";
+		stdout-path = "serial0:115200n8";
+	};
+};
+
+&clkc {
+	ps-clk-frequency = <33333333>;
+};
+
+&nfc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	nand@0 {
+		reg = <0>;
+		nand-ecc-mode = "on-die";
+		nand-ecc-strength = <0x4>;
+	};
+};
+
+&smcc {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gem0 {
+	status = "okay";
+	phy-mode = "rgmii-id";
+	phy-handle = <&ethernet_phy>;
+
+	/* 0362/5e62 */
+	ethernet_phy: ethernet-phy@1 {
+		reg = <1>;
+	};
+};
+
+&sdhci0 {
+	bootph-all;
+	status = "okay";
+	disable-wp;
+};
+
+&uart1 {
+	bootph-all;
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&can0 {
+	status = "okay";
+};
+
+&ttc0 {
+	status = "okay";
+};
+
+&watchdog0 {
+	reset-on-timeout;
+	timeout-sec = <200>;
+};

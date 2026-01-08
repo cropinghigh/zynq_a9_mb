@@ -1,0 +1,62 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for UARTPS controller
+
+maintainers:
+  - Manikanta Guntupalli <manikanta.guntupalli@amd.com>
+
+type: driver
+device_type: serial
+
+properties:
+  compatible:
+    OneOf:
+      - items:
+        - enum:
+          - cdns,uart-r1p12
+          - xlnx,zynqmp-uart
+        - enum:
+          - cdns,uart-r1p8
+          - xlnx,xuartps
+  reg:
+    description: Physical base address and size of the controller register map
+  xlnx,clock-freq:
+    description: Input clock frequency
+  xlnx,has-modem:
+    description: Specifies whether modem pins are connected to MIO or FMIO
+    type: boolean
+
+config:
+    - XUartPs_Config
+
+required:
+    - compatible
+    - reg
+    - xlnx,clock-freq
+    - xlnx,has-modem
+    - clocks
+    - interrupts
+    - interrupt-parent
+
+examples:
+    xuartps_hello_world_example.c:
+        - reg
+    xuartps_intr_example.c:
+        - interrupts
+    xuartps_low_echo_example.c:
+        - reg
+    xuartps_polled_example.c:
+        - reg
+    xuartps_selftest_example.c:
+        - reg
+
+tapp:
+   xuartps_polled_example.c:
+        declaration: UartPsPolledExample
+   xuartps_intr_example.c:
+        declaration: UartPsIntrExample
+        hwproperties:
+            - interrupts
+...

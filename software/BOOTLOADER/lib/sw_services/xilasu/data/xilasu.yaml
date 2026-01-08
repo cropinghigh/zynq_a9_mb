@@ -1,0 +1,46 @@
+%YAML 1.2
+---
+# Copyright (C) 2024 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+title: Bindings for xilasu library.
+maintainers:
+  - Akula, Mounika <mounika.akula@amd.com>
+  - Challa, Durga <durga.challa@amd.com>
+type: library
+description: Xilinx Application Security Unit Library
+supported_processors:
+  - condition: |
+      supported_processors = ["cortexa78", "cortexr52", "asu", "microblaze"]
+      if platform in ("microblaze", "microblaze_riscv"):
+        supported_processors = []
+supported_os: [standalone]
+depends_libs:
+  xilmailbox: {}
+examples:
+  xasu_aes_example.c: []
+  xasu_ecc_example.c: []
+  xasu_rsa_example.c: []
+  xasu_sha2_example.c: []
+  xasu_sha3_example.c: []
+  xasu_ecdh_example.c: []
+  xasu_hmac_example.c: []
+  xasu_kdf_example.c: []
+  xasu_trng_example.c: []
+  xasu_ecies_example.c: []
+  xasu_keywrap_example.c: []
+  xasu_ocp_example.c: []
+  xasu_ocp_dme_example.c: []
+  xasu_dme_keys_enc_example.c:
+    - dependency_files:
+      - xasu_dme_keys_enc_input_example.h
+
+  condition : |
+    examples = []
+    if platform == "Versal_2VE_2VM":
+      if proc in ["cortexa78", "cortexr52", "microblaze"]:
+        examples += ["xasu_aes_example.c", "xasu_ecc_example.c", "xasu_rsa_example.c",
+                  "xasu_sha2_example.c", "xasu_sha3_example.c",
+                "xasu_ecdh_example.c", "xasu_hmac_example.c",
+                "xasu_kdf_example.c", "xasu_trng_example.c",
+                "xasu_ecies_example.c", "xasu_keywrap_example.c",
+                "xasu_ocp_example.c", "xasu_ocp_dme_example.c", "xasu_dme_keys_enc_example.c"]

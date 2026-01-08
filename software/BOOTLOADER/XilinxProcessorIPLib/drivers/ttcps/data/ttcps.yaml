@@ -1,0 +1,51 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+---
+title: Bindings for TTCPS controller
+
+maintainers:
+  - Appana Durga Kedareswara Rao <appana.durga.kedareswara.rao@amd.com>
+
+type: driver
+device_type: timer
+
+properties:
+  compatible:
+    items:
+        - enum:
+          - cdns,ttc
+          - xlnx,psv-ttc
+  reg:
+    description: Physical base address and size of the controller register map
+  xlnx,clock-freq:
+    description: Input clock frequency
+
+config:
+    - XTtcPs_Config
+
+required:
+    - compatible
+    - reg
+    - xlnx,clock-freq
+    - interrupts: 1
+    - interrupt-parent
+
+additionalProperties:
+    - xlnx,ttc-clk0-clksrc
+
+examples:
+    xttcps_low_level_example.c:
+            - reg
+    xttcps_rtc_example.c:
+            - interrupts
+    xttcps_tapp_example.c:
+            - interrupts
+    xttcps_intr_example.c:
+            - interrupts
+
+tapp:
+  xttcps_tapp_example.c:
+          declaration: TmrInterruptExample
+          hwproperties:
+            - interrupts
+...

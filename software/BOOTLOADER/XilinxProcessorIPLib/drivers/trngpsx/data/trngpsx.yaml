@@ -1,0 +1,38 @@
+# Copyright (C) 2023 - 2024 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+
+%YAML 1.2
+---
+title: Bindings for trngpsx controller
+
+maintainers:
+  - Kundanala, Praveen Teja <praveen.teja.kundanala@amd.com>
+
+type: driver
+
+properties:
+  compatible:
+    items:
+    OneOf:
+      - items:
+        - enum:
+          - xlnx,psx-pmc-trng-11.0
+          - xlnx,pmc-trng-11.0
+          - xlnx,pmcl-trng-11.0
+
+config:
+  - XTrngpsx_Config
+
+required:
+  - compatible
+  - reg
+
+examples:
+  xtrngpsx_drng_example.c:
+    - reg
+  xtrngpsx_hrng_example.c:
+    - reg
+  xtrngpsx_ptrng_example.c:
+    - reg
+
+...

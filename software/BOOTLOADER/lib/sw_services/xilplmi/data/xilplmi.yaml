@@ -1,0 +1,51 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+
+%YAML 1.2
+---
+title: Bindings for xilplmi library
+
+maintainers:
+  - Kundella, Sreedhar <Sreedhar.Kundella@amd.com>
+  - Mulagondla, Bharath <bharath.mulagondla@amd.com>
+
+type: library
+
+version: 2.1
+
+description: Xilinx Versal Platform Loader and Manager Interface Library.
+
+supported_processors:
+  - psv_pmc
+  - psx_pmc
+  - pmc
+  - psxl_pmc
+  - psu_cortexa72
+  - psv_cortexa72
+  - psv_cortexr5
+  - microblaze
+  - psxl_cortexa78
+  - psxl_cortexr52
+  - psx_cortexa78
+  - cortexa78
+  - psx_cortexr52
+  - cortexr52
+
+supported_os:
+  - standalone
+  - freertos10_xilinx
+
+examples:
+  xplmi_event_logging_client_example.c: []
+  xplmi_get_board_client_example.c: []
+  xplmi_get_device_id_client_example.c: []
+  xplmi_tamper_trigger_client_example.c: []
+  xplmi_glitch_detector_example.c: []
+  xplmi_usermodule_example.c: []
+  xilplmi_in_place_plm_update_client_example.c:
+   - supported_platforms:
+      - VersalNet
+  xplmi_configure_secure_comm_example.c:
+   - supported_platforms:
+      - Versal
+...

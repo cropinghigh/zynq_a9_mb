@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+# Copyright 2024 Advanced Micro Devices Inc.
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/thermal/xlnx,versal-thermal.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Xilinx Versal Thermal
+
+maintainers:
+  - Salih Erim <salih.erim@amd.com>
+
+description:
+  Versal Thermal uses Versal Sysmon hardware for temperature reading
+  It works as sensor interface to be defined in thermal zones.
+  IIO binding channel through Sysmon required to use as temperature
+  sensor. It takes temperature values from versal processing system
+  sysmon and satellite sysmon sensors close to AI Engine through IIO
+  channels. Exposed temperature value is converted to millicelcius scale.
+
+properties:
+  compatible:
+    const: xlnx,versal-thermal
+
+  '#thermal-sensor-cells':
+    const: 1
+
+  io-channels:
+    maxItems: 1
+
+  io-channel-names:
+    const: sysmon-temp-channel
+
+required:
+  - compatible
+  - '#thermal-sensor-cells'
+  - io-channels
+  - io-channel-names
+
+additionalProperties: false
+
+examples:
+  - |
+    thermal-sensor {
+        compatible = "xlnx,versal-thermal";
+        #thermal-sensor-cells = <1>;
+        io-channels = <&sysmon0 15>, <&sysmon0 7>, <&sysmon0 8>,
+                      <&sysmon0 9>, <&sysmon0 10>, <&sysmon0 11>,
+                      <&sysmon0 12>, <&sysmon0 13>, <&sysmon0 14>;
+        io-channel-names = "sysmon-temp-channel", "aie-temp-ch1",
+                           "aie-temp-ch2", "aie-temp-ch3", "aie-temp-ch4",
+                           "aie-temp-ch5", "aie-temp-ch6", "aie-temp-ch7",
+                           "aie-temp-ch8";
+    };
+...

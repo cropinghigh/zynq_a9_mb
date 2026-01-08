@@ -1,0 +1,26 @@
+/******************************************************************************
+* Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+#ifndef XILNVM_BSP_CONFIG_H
+#define XILNVM_BSP_CONFIG_H
+
+#cmakedefine XNVM_ACCESS_PUF_USER_DATA
+#cmakedefine XNVM_CACHE_DISABLE
+
+/* Enable Additional PPKs for M50 design */
+#cmakedefine XNVM_EN_ADD_PPKS
+
+/* Enable to write Security Critical eFuses */
+#cmakedefine XNVM_WRITE_SECURITY_CRITICAL_EFUSE
+
+/* Enable to write User eFuses */
+#cmakedefine XNVM_WRITE_USER_EFUSE
+
+/* Enable to write Key Management eFuses */
+#cmakedefine XNVM_WRITE_KEY_MANAGEMENT_EFUSE
+
+/* Enable to configure the EFUSE CLK frequency from RTCA Space */
+#cmakedefine XNVM_SET_EFUSE_CLK_FREQUENCY_FROM_RTCA
+
+#endif /* XILNVM_BSP_CONFIG_H */

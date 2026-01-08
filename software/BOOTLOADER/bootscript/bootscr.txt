@@ -1,0 +1,11 @@
+fdt move ${fdtcontroladdr} 0x100000 0x50000
+fatload mmc 1:1 0x200000 dtbo/enabled.txt
+env import -t 0x200000 ${filesize}
+for f in ${enabled_dtbos}; do
+    fatload mmc 1:1 0x200000 dtbo/${f}
+    fdt apply 0x200000
+done
+fatload mmc 1:1 0x200000 PL.bin
+fpga load 0 0x200000 ${filesize}
+fatload mmc 1:1 0x200000 zImage
+bootz 0x200000 - 0x100000

@@ -1,0 +1,31 @@
+###############################################################################
+# Copyright (c) 2022 Xilinx, Inc.  All rights reserved.
+# Copyright (c) 2022 - 2025, Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+#
+# Modification History
+#
+# Ver   Who  Date     Changes
+# ----- ---- -------- -----------------------------------------------
+# 1.0   vns  06/27/22 Initial Release
+# 1.1   am   12/21/22 Changed user configurable parameter names
+#       am   01/10/23 Added xocp_cache_disable configurable parameter
+# 1.2   har  02/15/23 Updated library version for 2023.2
+# 1.3   tri  10/09/23 Updated library version for 2024.1
+# 1.4   har  06/10/24 Updated library verson for 2024.2
+# 1.6   har  07/11/25 Updated library version for 2025.2
+##############################################################################
+
+OPTION psf_version = 2.1;
+
+BEGIN LIBRARY xilocp
+  OPTION drc = ocp_drc;
+  OPTION copyfiles = all;
+  OPTION SUPPORTED_PERIPHERALS = (psv_pmc psx_pmc psxl_pmc psxl_cortexa78 psxl_cortexr52 psx_cortexa78 psx_cortexr52 microblaze);
+  OPTION REQUIRES_OS = (standalone freertos10_xilinx);
+  OPTION APP_LINKER_FLAGS = "-Wl,--start-group,-lxilocp,-lxil,-lgcc,-lc,--end-group";
+  OPTION desc = "Xilinx Open Compute Platform(OCP) support Library. Supported only for Versal Net";
+  OPTION VERSION = 1.6;
+  OPTION NAME = xilocp;
+  PARAM name = xocp_cache_disable, desc = "Enables/Disables Cache for XilOcp client library", type = bool, default = true;
+END LIBRARY

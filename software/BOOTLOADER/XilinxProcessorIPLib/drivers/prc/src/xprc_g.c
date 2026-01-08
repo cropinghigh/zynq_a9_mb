@@ -1,0 +1,76 @@
+/******************************************************************************
+* Copyright (C) 2010 - 2022 Xilinx, Inc.  All rights reserved.
+* Copyright (c) 2023 Advanced Micro Devices, Inc. All Rights Reserved.
+* SPDX-License-Identifier: MIT
+*******************************************************************************/
+#include "xparameters.h"
+#include "xprc.h"
+
+/* The configuration table for devices */
+XPrc_Config XPrc_ConfigTable[] = {
+
+	{
+		XPAR_PRC_DEVICE_ID,
+		XPAR_PRC_BASEADDR,
+		XPAR_PRC_NUM_OF_VSMS,
+		XPAR_PRC_CLEARING_BITSTREAM,
+		XPAR_PRC_CP_ARBITRATION_PROTOCOL,
+		XPAR_PRC_HAS_AXI_LITE_IF,
+		XPAR_PRC_RESET_ACTIVE_LEVEL,
+		XPAR_PRC_CP_FIFO_DEPTH,
+		XPAR_PRC_CP_FIFO_TYPE,
+		XPAR_PRC_CP_FAMILY,
+		XPAR_PRC_CDC_STAGES,
+		{
+			XPAR_PRC_NUM_RMS_VS_SHIFT,
+			XPAR_PRC_NUM_RMS_VS_COUNT
+		},
+		{
+			XPAR_PRC_NUM_RMS_ALLOC_VS_SHIFT,
+			XPAR_PRC_NUM_RMS_ALLOC_VS_COUNT
+		},
+		{
+			XPAR_PRC_STRT_IN_SHTDOWN_VS_SHIFT,
+			XPAR_PRC_STRT_IN_SHTDOWN_VS_COUNT
+		},
+		{
+			XPAR_PRC_NUM_TRGRS_ALLOC_VS_SHIFT,
+			XPAR_PRC_NUM_TRGRS_ALLOC_VS_COUNT
+		},
+		{
+			XPAR_PRC_SHUTDOWN_ON_ERR_VS_SHIFT,
+			XPAR_PRC_SHUTDOWN_ON_ERR_VS_COUNT
+		},
+		{
+			XPAR_PRC_HAS_POR_RM_VS_SHIFT,
+			XPAR_PRC_HAS_POR_RM_VS_COUNT
+		},
+		{
+			XPAR_PRC_POR_RM_VS_SHIFT,
+			XPAR_PRC_POR_RM_VS_COUNT
+		},
+		{
+			XPAR_PRC_HAS_AXIS_STATUS_VS_SHIFT,
+			XPAR_PRC_HAS_AXIS_STATUS_VS_COUNT
+		},
+		{
+			XPAR_PRC_HAS_AXIS_CONTROL_VS_SHIFT,
+			XPAR_PRC_HAS_AXIS_CONTROL_VS_COUNT
+		},
+		{
+			XPAR_PRC_SKIP_RM_STARTUP_AFTER_RESET_VS_SHIFT,
+			XPAR_PRC_SKIP_RM_STARTUP_AFTER_RESET_VS_COUNT
+		},
+		{
+			XPAR_PRC_NUM_HW_TRIGGERS_VS_SHIFT,
+			XPAR_PRC_NUM_HW_TRIGGERS_VS_COUNT
+		},
+		XPAR_PRC_VSM_SELECT_MSB,
+		XPAR_PRC_VSM_SELECT_LSB,
+		XPAR_PRC_TABLE_SELECT_MSB,
+		XPAR_PRC_TABLE_SELECT_LSB,
+		XPAR_PRC_REG_SELECT_MSB,
+		XPAR_PRC_REG_SELECT_LSB,
+	}
+
+};

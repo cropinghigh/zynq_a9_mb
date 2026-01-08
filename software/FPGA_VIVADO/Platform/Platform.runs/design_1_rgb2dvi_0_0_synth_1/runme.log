@@ -1,0 +1,281 @@
+
+*** Running vivado
+    with args -log design_1_rgb2dvi_0_0.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source design_1_rgb2dvi_0_0.tcl
+
+
+****** Vivado v2021.1 (64-bit)
+  **** SW Build 3247384 on Thu Jun 10 19:36:07 MDT 2021
+  **** IP Build 3246043 on Fri Jun 11 00:30:35 MDT 2021
+    ** Copyright 1986-2021 Xilinx, Inc. All Rights Reserved.
+
+source design_1_rgb2dvi_0_0.tcl -notrace
+create_project: Time (s): cpu = 00:00:01 ; elapsed = 00:00:07 . Memory (MB): peak = 2417.066 ; gain = 0.000 ; free physical = 2338 ; free virtual = 12839
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1700] Loaded user IP repository '/drive/data/Linux/TEMP/antminer/vivado-library-master'.
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/drive/data/WinCommon/Common/Programs/Vivado/Vivado/2021.1/data/ip'.
+update_ip_catalog: Time (s): cpu = 00:00:00.82 ; elapsed = 00:00:12 . Memory (MB): peak = 2417.066 ; gain = 0.000 ; free physical = 2288 ; free virtual = 12813
+Command: synth_design -top design_1_rgb2dvi_0_0 -part xc7z010clg400-3 -mode out_of_context
+Starting synth_design
+Attempting to get a license for feature 'Synthesis' and/or device 'xc7z010'
+INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7z010'
+INFO: [Device 21-403] Loading part xc7z010clg400-3
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 4 processes.
+INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
+INFO: [Synth 8-7075] Helper process launched with PID 3013950
+---------------------------------------------------------------------------------
+Starting RTL Elaboration : Time (s): cpu = 00:00:04 ; elapsed = 00:00:07 . Memory (MB): peak = 2417.066 ; gain = 0.000 ; free physical = 611 ; free virtual = 11187
+---------------------------------------------------------------------------------
+INFO: [Synth 8-638] synthesizing module 'design_1_rgb2dvi_0_0' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/synth/design_1_rgb2dvi_0_0.vhd:72]
+	Parameter kGenerateSerialClk bound to: 0 - type: bool 
+	Parameter kClkPrimitive bound to: PLL - type: string 
+	Parameter kRstActiveHigh bound to: 0 - type: bool 
+	Parameter kClkRange bound to: 3 - type: integer 
+	Parameter kD0Swap bound to: 0 - type: bool 
+	Parameter kD1Swap bound to: 0 - type: bool 
+	Parameter kD2Swap bound to: 0 - type: bool 
+	Parameter kClkSwap bound to: 0 - type: bool 
+INFO: [Synth 8-3491] module 'rgb2dvi' declared at '/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/rgb2dvi.vhd:62' bound to instance 'U0' of component 'rgb2dvi' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/synth/design_1_rgb2dvi_0_0.vhd:124]
+INFO: [Synth 8-638] synthesizing module 'rgb2dvi' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/rgb2dvi.vhd:94]
+INFO: [Synth 8-638] synthesizing module 'ResetBridge' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/SyncAsyncReset.vhd:72]
+INFO: [Synth 8-638] synthesizing module 'SyncAsync' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/SyncAsync.vhd:72]
+INFO: [Synth 8-256] done synthesizing module 'SyncAsync' (1#1) [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/SyncAsync.vhd:72]
+INFO: [Synth 8-256] done synthesizing module 'ResetBridge' (2#1) [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/SyncAsyncReset.vhd:72]
+INFO: [Synth 8-638] synthesizing module 'OutputSERDES' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/OutputSERDES.vhd:76]
+	Parameter IOSTANDARD bound to: TMDS_33 - type: string 
+INFO: [Synth 8-113] binding component instance 'OutputBuffer' to cell 'OBUFDS' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/OutputSERDES.vhd:83]
+	Parameter DATA_RATE_OQ bound to: DDR - type: string 
+	Parameter DATA_RATE_TQ bound to: SDR - type: string 
+	Parameter DATA_WIDTH bound to: 10 - type: integer 
+	Parameter SERDES_MODE bound to: MASTER - type: string 
+	Parameter TBYTE_CTL bound to: FALSE - type: string 
+	Parameter TBYTE_SRC bound to: FALSE - type: string 
+	Parameter TRISTATE_WIDTH bound to: 1 - type: integer 
+INFO: [Synth 8-113] binding component instance 'SerializerMaster' to cell 'OSERDESE2' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/OutputSERDES.vhd:92]
+	Parameter DATA_RATE_OQ bound to: DDR - type: string 
+	Parameter DATA_RATE_TQ bound to: SDR - type: string 
+	Parameter DATA_WIDTH bound to: 10 - type: integer 
+	Parameter SERDES_MODE bound to: SLAVE - type: string 
+	Parameter TBYTE_CTL bound to: FALSE - type: string 
+	Parameter TBYTE_SRC bound to: FALSE - type: string 
+	Parameter TRISTATE_WIDTH bound to: 1 - type: integer 
+INFO: [Synth 8-113] binding component instance 'SerializerSlave' to cell 'OSERDESE2' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/OutputSERDES.vhd:135]
+INFO: [Synth 8-256] done synthesizing module 'OutputSERDES' (3#1) [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/OutputSERDES.vhd:76]
+INFO: [Synth 8-638] synthesizing module 'TMDS_Encoder' [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/TMDS_Encoder.vhd:80]
+INFO: [Synth 8-256] done synthesizing module 'TMDS_Encoder' (4#1) [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/TMDS_Encoder.vhd:80]
+INFO: [Synth 8-256] done synthesizing module 'rgb2dvi' (5#1) [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ipshared/d57c/src/rgb2dvi.vhd:94]
+INFO: [Synth 8-256] done synthesizing module 'design_1_rgb2dvi_0_0' (6#1) [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/synth/design_1_rgb2dvi_0_0.vhd:72]
+---------------------------------------------------------------------------------
+Finished RTL Elaboration : Time (s): cpu = 00:00:05 ; elapsed = 00:00:11 . Memory (MB): peak = 2417.066 ; gain = 0.000 ; free physical = 281 ; free virtual = 9637
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:05 ; elapsed = 00:00:12 . Memory (MB): peak = 2417.066 ; gain = 0.000 ; free physical = 225 ; free virtual = 8529
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:05 ; elapsed = 00:00:12 . Memory (MB): peak = 2417.066 ; gain = 0.000 ; free physical = 223 ; free virtual = 8526
+---------------------------------------------------------------------------------
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2417.066 ; gain = 0.000 ; free physical = 253 ; free virtual = 8468
+INFO: [Netlist 29-17] Analyzing 4 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+
+Processing XDC Constraints
+Initializing timing engine
+Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/src/rgb2dvi_ooc.xdc] for cell 'U0'
+Finished Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/src/rgb2dvi_ooc.xdc] for cell 'U0'
+Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/src/rgb2dvi.xdc] for cell 'U0'
+Finished Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/src/rgb2dvi.xdc] for cell 'U0'
+Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.runs/design_1_rgb2dvi_0_0_synth_1/dont_touch.xdc]
+Finished Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.runs/design_1_rgb2dvi_0_0_synth_1/dont_touch.xdc]
+Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/src/rgb2dvi_clocks.xdc] for cell 'U0'
+Finished Parsing XDC File [/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/src/rgb2dvi_clocks.xdc] for cell 'U0'
+Completed Processing XDC Constraints
+
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2447.105 ; gain = 0.000 ; free physical = 2571 ; free virtual = 10756
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Constraint Validation Runtime : Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.09 . Memory (MB): peak = 2447.105 ; gain = 0.000 ; free physical = 2587 ; free virtual = 10772
+---------------------------------------------------------------------------------
+Finished Constraint Validation : Time (s): cpu = 00:00:10 ; elapsed = 00:00:21 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2594 ; free virtual = 10787
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Loading Part and Timing Information
+---------------------------------------------------------------------------------
+Loading part: xc7z010clg400-3
+---------------------------------------------------------------------------------
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:10 ; elapsed = 00:00:21 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2594 ; free virtual = 10787
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying 'set_property' XDC Constraints
+---------------------------------------------------------------------------------
+Applied set_property KEEP_HIERARCHY = SOFT for U0. (constraint file  /home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.runs/design_1_rgb2dvi_0_0_synth_1/dont_touch.xdc, line 9).
+---------------------------------------------------------------------------------
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:10 ; elapsed = 00:00:21 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2612 ; free virtual = 10804
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:11 ; elapsed = 00:00:22 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2654 ; free virtual = 10851
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start RTL Component Statistics 
+---------------------------------------------------------------------------------
+Detailed RTL Component Info : 
++---Adders : 
+	   3 Input    5 Bit       Adders := 9     
+	   4 Input    5 Bit       Adders := 3     
+	   2 Input    5 Bit       Adders := 3     
+	   8 Input    4 Bit       Adders := 6     
+	   2 Input    4 Bit       Adders := 3     
++---XORs : 
+	   2 Input      1 Bit         XORs := 42    
++---Registers : 
+	               10 Bit    Registers := 3     
+	                9 Bit    Registers := 3     
+	                8 Bit    Registers := 3     
+	                5 Bit    Registers := 3     
+	                4 Bit    Registers := 9     
+	                2 Bit    Registers := 1     
+	                1 Bit    Registers := 18    
++---Muxes : 
+	   4 Input   10 Bit        Muxes := 3     
+	   2 Input    9 Bit        Muxes := 3     
+	   2 Input    5 Bit        Muxes := 9     
+---------------------------------------------------------------------------------
+Finished RTL Component Statistics 
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Part Resource Summary
+---------------------------------------------------------------------------------
+Part Resources:
+DSPs: 80 (col length:40)
+BRAMs: 120 (col length: RAMB18 40 RAMB36 20)
+---------------------------------------------------------------------------------
+Finished Part Resource Summary
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Cross Boundary and Area Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:14 ; elapsed = 00:00:25 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2619 ; free virtual = 10841
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Applying XDC Timing Constraints
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Applying XDC Timing Constraints : Time (s): cpu = 00:00:20 ; elapsed = 00:00:33 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2312 ; free virtual = 10545
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Timing Optimization
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Timing Optimization : Time (s): cpu = 00:00:20 ; elapsed = 00:00:34 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2342 ; free virtual = 10575
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Technology Mapping
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Technology Mapping : Time (s): cpu = 00:00:20 ; elapsed = 00:00:34 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2324 ; free virtual = 10557
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Flattening Before IO Insertion
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Final Netlist Cleanup
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished IO Insertion : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2465 ; free virtual = 10696
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Instances
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2465 ; free virtual = 10696
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Rebuilding User Hierarchy
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2465 ; free virtual = 10696
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Ports
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2465 ; free virtual = 10696
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Handling Custom Attributes
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2465 ; free virtual = 10696
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Renaming Generated Nets
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2465 ; free virtual = 10696
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+Start Writing Synthesis Report
+---------------------------------------------------------------------------------
+
+Report BlackBoxes: 
++-+--------------+----------+
+| |BlackBox name |Instances |
++-+--------------+----------+
++-+--------------+----------+
+
+Report Cell Usage: 
++------+----------+------+
+|      |Cell      |Count |
++------+----------+------+
+|1     |LUT1      |     5|
+|2     |LUT2      |    22|
+|3     |LUT3      |    34|
+|4     |LUT4      |    23|
+|5     |LUT5      |    43|
+|6     |LUT6      |    72|
+|7     |OSERDESE2 |     8|
+|9     |FDPE      |     2|
+|10    |FDRE      |   117|
+|11    |FDSE      |    15|
+|12    |OBUFDS    |     4|
++------+----------+------+
+---------------------------------------------------------------------------------
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.105 ; gain = 30.039 ; free physical = 2465 ; free virtual = 10696
+---------------------------------------------------------------------------------
+Synthesis finished with 0 errors, 0 critical warnings and 0 warnings.
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:21 ; elapsed = 00:00:32 . Memory (MB): peak = 2447.105 ; gain = 0.000 ; free physical = 2503 ; free virtual = 10734
+Synthesis Optimization Complete : Time (s): cpu = 00:00:23 ; elapsed = 00:00:37 . Memory (MB): peak = 2447.113 ; gain = 30.039 ; free physical = 2503 ; free virtual = 10734
+INFO: [Project 1-571] Translating synthesized netlist
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2447.113 ; gain = 0.000 ; free physical = 2503 ; free virtual = 10734
+INFO: [Netlist 29-17] Analyzing 4 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2447.113 ; gain = 0.000 ; free physical = 2545 ; free virtual = 10776
+INFO: [Project 1-111] Unisim Transformation Summary:
+No Unisim elements were transformed.
+
+Synth Design complete, checksum: 1111948d
+INFO: [Common 17-83] Releasing license: Synthesis
+35 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+synth_design completed successfully
+synth_design: Time (s): cpu = 00:00:33 ; elapsed = 00:00:44 . Memory (MB): peak = 2447.113 ; gain = 30.047 ; free physical = 2647 ; free virtual = 10878
+INFO: [Common 17-1381] The checkpoint '/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.runs/design_1_rgb2dvi_0_0_synth_1/design_1_rgb2dvi_0_0.dcp' has been generated.
+INFO: [Coretcl 2-1648] Added synthesis output to IP cache for IP design_1_rgb2dvi_0_0, cache-ID = 8023cdedf01d019a
+INFO: [Coretcl 2-1174] Renamed 10 cell refs.
+INFO: [Common 17-1381] The checkpoint '/home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.runs/design_1_rgb2dvi_0_0_synth_1/design_1_rgb2dvi_0_0.dcp' has been generated.
+INFO: [runtcl-4] Executing : report_utilization -file design_1_rgb2dvi_0_0_utilization_synth.rpt -pb design_1_rgb2dvi_0_0_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Mon Dec 29 15:04:27 2025...

@@ -1,0 +1,53 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for MAILBOX controller
+
+maintainers:
+  - Harini T <harini.t@amd.com>
+
+type: driver
+
+properties:
+  compatible:
+    OneOf:
+      - items:
+        - enum:
+          - xlnx,mailbox-2.1
+          - xlnx,mailbox
+  reg:
+    description: Physical base address and size of the controller register map
+  xlnx,use-fsl:
+    description: |
+      Differentiates the dma controller that driver supports
+
+config:
+    - XMbox_Config
+
+required:
+    - compatible
+    - reg: 1
+    - xlnx,use-fsl
+    - xlnx,send-fsl
+    - xlnx,recv-fsl
+    - interrupts
+    - interrupt-parent
+
+xparam_prefix: Mbox
+
+examples:
+        xmbox_intr_example.c:
+                - interrupts
+        xmbox_example.c:
+                - reg
+        xmbox_tapp_example.c:
+                - reg
+
+tapp:
+        xmbox_tapp_example.c:
+                declaration: MailboxExample
+                hwproperties:
+                        - interrupts
+
+...

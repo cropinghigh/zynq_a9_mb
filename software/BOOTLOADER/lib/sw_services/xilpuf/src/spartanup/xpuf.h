@@ -1,0 +1,131 @@
+/******************************************************************************
+* Copyright (C) 2024 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+
+/*****************************************************************************/
+/**
+*
+* @file xpuf.h
+*
+* This file contains PUF interface APIs
+*
+* <pre>
+* MODIFICATION HISTORY:
+*
+* Ver   Who  Date        Changes
+* ----- ---- ---------- -------------------------------------------------------
+* 1.0   kpt  08/23/2024 Initial release
+* 2.6   mb   07/04/2025 Updated XPuf_Data doxygen comments
+*       mb   07/08/2025 Update PUF shutter value
+*       aa   07/14/2025 Removed unused macros
+*       mb   09/26/2025 Update GlobalVarFilter type to u32
+*
+* </pre>
+*
+*******************************************************************************/
+#ifndef XPUF_H
+#define XPUF_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/****************************** Include Files *********************************/
+#include "xil_types.h"
+
+/*************************** Constant Definitions *****************************/
+/**
+ * @cond xpuf_internal
+ * @{
+ */
+
+#define XPUF_4K_PUF_SYN_LEN_IN_WORDS			(140U)
+		/**< PUF 4K syndrome data length in words */
+
+#define XPUF_EFUSE_TRIM_SYN_DATA_IN_WORDS		(127U)
+		/**< Efuse trimmed syndrome data length in words */
+
+#define XPUF_ID_LEN_IN_WORDS				(0x8U)	/**< PUF ID length in words */
+
+#define XPUF_WORD_LENGTH				(0x4U)	/**< Word length in bytes*/
+
+#define XPUF_4K_PUF_SYN_LEN_IN_BYTES			(XPUF_4K_PUF_SYN_LEN_IN_WORDS * \
+								XPUF_WORD_LENGTH)
+							/**< PUF 4K syndrome data length in bytes */
+
+#define XPUF_ID_LEN_IN_BYTES				(XPUF_ID_LEN_IN_WORDS * \
+							XPUF_WORD_LENGTH)
+							/**< PUF ID length in bytes */
+
+#define XPUF_EFUSE_TRIM_SYN_DATA_IN_BYTES		(XPUF_EFUSE_TRIM_SYN_DATA_IN_WORDS * \
+							XPUF_WORD_LENGTH)
+				/**< Trimmed syndrome data length in bytes */
+
+#define XPUF_EFUSE_TRIM_MASK				(0xFFFFF000U)
+			/**< Mask for trimming syndrome data to be stored in eFuses */
+
+#define XPUF_LAST_WORD_OFFSET				(126U)
+			/**< Offset for last word for PUF Syndrome data */
+
+#define XPUF_LAST_WORD_MASK				(0xFFFFFFF0U)
+			/**< Mask for last word for PUF Syndrome data */
+
+#define XPUF_ERROR_PUF_OVERFLOW				(0xA) /**< Error due to PUF overflow */
+
+#define XPUF_SHUTTER_VALUE				(0x01000080U) /**< Shutter value */
+
+#define XPUF_AUX_SHIFT_VALUE 				(4U) /**< No of bits aux has to shift*/
+
+enum{
+	XPUF_ERROR_INVALID_PARAM = 0x02, /**< 0x02 - Error due to invalid parameter */
+	XPUF_ERROR_SYNDROME_WORD_WAIT_TIMEOUT,	/**< 0x03 - Error due to timeout while
+						waiting for syndrome data to be generated */
+	XPUF_ERROR_KEY_NOT_CONVERGED,		/**< 0x04 - Error when iterative
+						convergence not done */
+	XPUF_ERROR_PUF_DONE_WAIT_TIMEOUT,	/**< 0x05 - Error due to timeout while
+						waiting for Done bit to be set in PUF Status */
+	XPUF_ERROR_SYN_DATA_ERROR,		/**< 0x06 - Error if Size of PUF Syndrome Data
+						is not same as expected size */
+	XPUF_ERROR_PUF_ID_ZERO_TIMEOUT,		/** 0x07 Error due to timeout while zeroizing PUF ID */
+	XPUF_ERROR_PUF_DONE_ID_NT_RDY		/** 0x08 Error if PUF operation is done but ID
+						Ready bit is not set */
+};
+
+/***************************** Type Definitions *******************************/
+/**
+ *  This structure is used as input to perform PUF operations
+ *  i.e. Registration and  On demand regeneration.
+ */
+typedef struct _XPuf_Data {
+	u32 GlobalVarFilter; /**< Option to configure Global Variation Filter */
+	u32 ShutterValue; /**< Option to configure Shutter Value */
+	u32 SyndromeData[XPUF_4K_PUF_SYN_LEN_IN_WORDS];
+		/**< Syndrome data for PUF regeneration */
+	u32 Chash; /**< Chash for PUF regeneration */
+	u32 Aux; /**< Auxiliary data for PUF regeneration */
+	u32 PufID[XPUF_ID_LEN_IN_WORDS]; /**< PUF ID */
+	u32 SyndromeAddr; /**< Address of syndrome data */
+	u32 TrimmedSynData[XPUF_EFUSE_TRIM_SYN_DATA_IN_WORDS];
+		/**< Trimmed syndrome data*/
+	u32 RoSwapVal; /**< PUF Ring Oscillator Swap setting */
+} XPuf_Data;
+
+/**
+ * @}
+ * @endcond
+ */
+
+/***************** Macros (Inline Functions) Definitions *********************/
+
+/*************************** Function Prototypes ******************************/
+int XPuf_Registration(XPuf_Data *PufData);
+int XPuf_Regeneration(XPuf_Data *PufData);
+int XPuf_ClearPufID(void);
+int XPuf_TrimPufData(XPuf_Data *PufData);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif  /* XPUF_H */

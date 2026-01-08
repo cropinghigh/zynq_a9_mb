@@ -1,0 +1,40 @@
+###############################################################################
+# Copyright (c) 2018 - 2022 Xilinx, Inc.  All rights reserved.
+# Copyright (C) 2022 - 2025 Advanced Micro Devices, Inc. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+#
+# Modification History
+#
+# Ver   Who  Date     Changes
+# ----- ---- -------- -----------------------------------------------
+# 1.00  pc   01-21-19 Initial creation
+# 1.01  pc   03-24-20 Update copyright year and uprev library to v1.1
+# 1.02  pc   06-05-20 Uprev library to v1.2. Remove unused params
+# 1.03  rb   03-09-21 Uprev library to v1.3. Remove unused option
+# 1.04  rb   03-16-21 Adds SUPPORTED_PERIPHERALS option
+# 1.05  rb   03-17-21 Adds psv_cortexr5 in supported peripherals
+# 1.06  hb   07-14-21 Uprev library to v1.4.
+# 1.07	hv   10-27-21 Uprev library to v1.5.
+# 1.08  gm   11-22-22 Added support for A72 and Uprev library to v1.7
+# 1.09	hv   11-16-22 Adds PL microblaze in supported peripherals
+# 1.10	rv   04-21-23 Uprev library to v1.8
+# 1.11  gm   07-07-23 Added support for FreeRTOS
+# 1.12  gm   10-31-23 Added support for A78.
+# 1.13  gm   02-26-24 Removed dummy BSP options.
+# 1.10  oh   07/24/24 Updated Library version for 2024.2 to 1.10
+# 1.11  gm   01-08-25 Uprev library to v1.11
+# 1.12  gm   06-04-25 Uprev library to v1.12 for 2025.2
+##############################################################################
+
+OPTION psf_version = 2.1;
+
+BEGIN LIBRARY xilsem
+  OPTION drc = sem_drc;
+  OPTION copyfiles = all;
+  OPTION REQUIRES_OS = (standalone freertos10_xilinx);
+  OPTION SUPPORTED_PERIPHERALS = (psu_pmc psv_pmc psxl_pmc psx_pmc psv_cortexr5 psxl_cortexr52 psx_cortexr52 psu_cortexa72 psv_cortexa72 microblaze psx_cortexa78 );
+  OPTION APP_LINKER_FLAGS = "-Wl,--start-group,-lxilsem,-lxil,-lgcc,-lc,--end-group";
+  OPTION desc = "Xilinx Versal Soft Error Mitigation Library";
+  OPTION VERSION = 1.12;
+  OPTION NAME = xilsem;
+END LIBRARY

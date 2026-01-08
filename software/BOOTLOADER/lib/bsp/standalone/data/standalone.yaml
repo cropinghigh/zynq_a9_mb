@@ -1,0 +1,34 @@
+# Copyright (c) 2023 - 2024 Advanced Micro Devices, Inc. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for standalone
+
+maintainers:
+  - Mubin Sayyed <mubin.sayyed@amd.com>
+
+type: os
+
+version: 9.0
+
+depends:
+    uartlite:
+        - reg
+    uartns550:
+        - reg
+    uartps:
+        - reg
+    uartpsv:
+        - reg
+    coresightps_dcc:
+        - reg
+    iomodule:
+        - reg
+
+examples:
+    xil_nested_interrupts_example.c:
+        - reg
+    xpm_counter_arm_example.c:
+        - reg
+
+...

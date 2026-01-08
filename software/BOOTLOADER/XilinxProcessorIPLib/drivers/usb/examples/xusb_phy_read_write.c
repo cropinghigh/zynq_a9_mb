@@ -1,0 +1,287 @@
+/******************************************************************************
+* Copyright (C) 2010 - 2022 Xilinx, Inc.  All rights reserved.
+* Copyright (c) 2023 Advanced Micro Devices, Inc. All Rights Reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+
+/*****************************************************************************/
+/**
+ * @file xusb_phy_read_write.c
+ *
+ * This file contains PHY register access related example.
+ *
+ * @note	This example only shows reading and writing to the ULPI PHY
+ *		SCRATCH register.The user can access any other register as per
+ *		their requirement.
+ *
+ * <pre>
+ * MODIFICATION HISTORY:
+ *
+ * Ver   Who  Date     Changes
+ * ----- ---- -----------------------------------------------------------------
+ * 1.00a hvm  12/3/10 First release
+ * 5.6   pm   07/05/23 Removed powerpc support.
+ * 5.6   pm   07/05/23 Added support for system device-tree flow.
+ *
+ * </pre>
+ *****************************************************************************/
+/***************************** Include Files *********************************/
+
+#include "xusb.h"
+#include "stdio.h"
+#include "xenv_standalone.h"
+#include "xil_exception.h"
+#include "xil_cache.h"
+#include "xparameters.h"
+
+#ifndef SDT
+#include "xintc.h"
+#else
+#include "xinterrupt_wrap.h"
+#endif
+/************************** Constant Definitions *****************************/
+
+#ifndef SDT
+#define USB_DEVICE_ID		XPAR_USB_0_DEVICE_ID
+#define INTC_DEVICE_ID		XPAR_INTC_0_DEVICE_ID
+#define USB_INTR		XPAR_INTC_0_USB_0_VEC_ID
+#else
+#define XUSB_BASEADDRESS	XPAR_XUSB_0_BASEADDR
+#endif
+
+#define ULPI_SCRATCH_REGISTER	0x16
+#define WRITE_REG_DATA		0xAA
+
+/************************** Variable Definitions *****************************/
+
+XUsb UsbInstance;		/* The instance of the USB device */
+XUsb_Config *UsbConfigPtr;	/* Instance of the USB config structure */
+
+#ifndef SDT
+XIntc InterruptController;	/* Instance of the Interrupt Controller */
+#endif
+
+volatile u8 PhyAccessDone = 0;
+
+void UsbIfPhyIntrHandler(void *CallBackRef, u32 IntrStatus);
+#ifndef SDT
+static int SetupInterruptSystem(XUsb *InstancePtr);
+#endif
+
+/*****************************************************************************/
+/**
+ * This main function starts the USB application.
+ *
+ *
+ * @param	None.
+ *
+ * @return
+ *		- XST_SUCCESS if successful.
+ *		- XST_FAILURE if test fails.
+ * @note	None.
+ *
+ *****************************************************************************/
+int main()
+{
+	int Status;
+	u32 ReadRegData = 0;
+	/*
+	 * Initialize the USB driver.
+	 */
+#ifndef SDT
+	UsbConfigPtr = XUsb_LookupConfig(USB_DEVICE_ID);
+#else
+	UsbConfigPtr = XUsb_LookupConfig(XUSB_BASEADDRESS);
+#endif
+	if (NULL == UsbConfigPtr) {
+		return XST_FAILURE;
+	}
+#ifndef SDT
+#ifdef __MICROBLAZE__
+	Xil_ICacheInvalidate();
+	Xil_ICacheEnable();
+
+
+	Xil_DCacheInvalidate();
+	Xil_DCacheEnable();
+#endif
+#endif
+
+	/*
+	 * We are passing the physical base address as the third argument
+	 * because the physical and virtual base address are the same in our
+	 * example. For systems that support virtual memory, the third
+	 * argument needs to be the virtual base address.
+	 */
+	Status = XUsb_CfgInitialize(&UsbInstance,
+				    UsbConfigPtr, UsbConfigPtr->BaseAddress);
+	if (XST_SUCCESS != Status) {
+		return XST_FAILURE;
+	}
+
+	XUsb_UlpiIntrSetHandler (&UsbInstance, (void *) UsbIfPhyIntrHandler,
+				 &UsbInstance);
+	/*
+	 * Setup the interrupt system.
+	 */
+#ifndef SDT
+	Status = SetupInterruptSystem(&UsbInstance);
+#else
+	Status = XSetupInterruptSystem(&UsbInstance,
+				       &XUsb_IntrHandler,
+				       UsbConfigPtr->IntrId,
+				       UsbConfigPtr->IntrParent,
+				       XINTERRUPT_DEFAULT_PRIORITY);
+#endif
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	/*
+	 * Enable the interrupts.
+	 */
+	XUsb_IntrEnable(&UsbInstance, XUSB_STATUS_GLOBAL_INTR_MASK |
+			XUSB_STATUS_PHY_ACCESS_MASK);
+
+	XUsb_Start(&UsbInstance);
+
+
+	/*
+	 * Initiate a ULPI register write transaction.
+	 */
+	XUsb_UlpiPhyWriteRegister(&UsbInstance, ULPI_SCRATCH_REGISTER,
+				  WRITE_REG_DATA);
+
+
+	/* Wait until the write transaction is done */
+	while (!PhyAccessDone);
+
+	/*
+	 * Read the PHY read register.  We do not wait for transaction
+	 * complete interrupt in this case. The API internally polls for the
+	 * completion and then returns the register value read.
+	 */
+	ReadRegData = XUsb_UlpiPhyReadRegister(&UsbInstance,
+					       ULPI_SCRATCH_REGISTER);
+
+
+	/* Compare the Written data and read data*/
+	if (ReadRegData != WRITE_REG_DATA) {
+
+		return XST_FAILURE;
+	}
+
+	return XST_SUCCESS;
+
+}
+
+/*****************************************************************************/
+/**
+ * This function is the ULPI PHY interrupt handler
+ *
+ *
+ * @param    	CallBackRef is the callback reference passed from the interrupt
+ *           	handler, which in our case is a pointer to the driver instance.
+ * @param    	IntrStatus is a bit mask indicating pending interrupts.
+ *
+ * @return   	None.
+ *
+ * @note        None.
+ *
+ ******************************************************************************/
+void UsbIfPhyIntrHandler(void *CallBackRef, u32 IntrStatus)
+{
+
+	XUsb *InstancePtr;
+
+	InstancePtr = (XUsb *) CallBackRef;
+
+
+	if (IntrStatus & XUSB_STATUS_PHY_ACCESS_MASK) {
+
+		PhyAccessDone = 1;
+	}
+
+}
+
+#ifndef SDT
+/******************************************************************************/
+/**
+*
+* This function sets up the interrupt system such that interrupts can occur
+* for the USB. This function is application specific since the actual
+* system may or may not have an interrupt controller. The USB could be
+* directly connected to a processor without an interrupt controller.  The
+* user should modify this function to fit the application.
+*
+* @param	InstancePtr contains a pointer to the instance of the USB
+*		component, which is going to be connected to the interrupt
+*		controller.
+*
+* @return
+*		- XST_SUCCESS if successful.
+*		- XST_FAILURE. if it fails.
+*
+* @note		None
+*
+*******************************************************************************/
+static int SetupInterruptSystem(XUsb *InstancePtr)
+{
+	int Status;
+
+	/*
+	 * Initialize the interrupt controller driver.
+	 */
+	Status = XIntc_Initialize(&InterruptController, INTC_DEVICE_ID);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+
+	/*
+	 * Connect a device driver handler that will be called when an interrupt
+	 * for the USB device occurs.
+	 */
+	Status = XIntc_Connect(&InterruptController, USB_INTR,
+			       (XInterruptHandler) XUsb_IntrHandler,
+			       (void *) InstancePtr);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	/*
+	 * Start the interrupt controller such that interrupts are enabled for
+	 * all devices that cause interrupts, specific real mode so that
+	 * the USB can cause interrupts through the interrupt controller.
+	 */
+	Status = XIntc_Start(&InterruptController, XIN_REAL_MODE);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	/*
+	 * Enable the interrupt for the USB.
+	 */
+	XIntc_Enable(&InterruptController, USB_INTR);
+
+	/*
+	 * Initialize the exception table
+	 */
+	Xil_ExceptionInit();
+
+	/*
+	 * Register the interrupt controller handler with the exception table
+	 */
+	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT,
+				     (Xil_ExceptionHandler)XIntc_InterruptHandler,
+				     &InterruptController);
+
+	/*
+	 * Enable non-critical exceptions
+	 */
+	Xil_ExceptionEnable();
+
+	return XST_SUCCESS;
+}
+#endif
+

@@ -1,0 +1,8 @@
+//arch = zynq; split = false; format = BIN
+the_ROM_image:
+{
+	[bootloader]fsbl/src/fsbl.elf
+	u-boot/u-boot.elf
+	// ./u-boot-xlnx/u-boot.elf
+	// [offset=0x1FFFC0]./end.txt
+}

@@ -1,0 +1,9 @@
+###############################################################################
+# Copyright (C) 2021 - 2022 Xilinx, Inc.  All rights reserved.
+# Copyright (C) 2022 - 2023 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+##############################################################################
+
+vdma.c=vdma_api.c
+xaxivdma_example_intr.c=xaxivdma_example_intr.c
+xaxivdma_example_selftest.c=xaxivdma_example_selftest.c

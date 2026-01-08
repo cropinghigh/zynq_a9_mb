@@ -1,0 +1,761 @@
+/******************************************************************************
+* Copyright (c) 2017 - 2022 Xilinx, Inc.  All rights reserved.
+* Copyright (c) 2022 - 2025, Advanced Micro Devices, Inc. All Rights Reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+
+/*****************************************************************************/
+/**
+*
+* @file xilpdi.c
+*
+* This is the C file which contains APIs for reading PDI image.
+*
+* <pre>
+* MODIFICATION HISTORY:
+*
+* Ver   Who  Date        Changes
+* ----- ---- -------- -------------------------------------------------------
+* 1.00  kc   12/21/2017 Initial release
+* 1.01  bsv  04/08/2019 Added support for secondary boot device parameters
+*       bsv  07/30/2019 Renamed XilPdi_ReadAndValidateImgHdrTbl to
+							XilPdi_ReadImgHdrTbl
+*       rm   28/08/2019 Added APIs for retrieving delay load and delay handoff
+*						params
+* 1.02  bsv  29/11/2019 Added support for smap bus width word in partial pdis
+*       vnsl 26/02/2020 Added support to read DPA CM Enable field in meta headers
+*       vnsl 01/03/2020 Added support to read PufHeader from Meta Headers and
+*						partition headers
+*       vnsl 12/04/2020 Added support to read BootHdr Auth Enable field in
+*						boot header
+* 1.03  bsv  07/29/2020 Updated function headers
+*       kpt  07/30/2020 Added check to validate number of images
+*       bm   09/29/2020 Code cleanup
+*       kpt  10/19/2020 Added support to validate checksum of image headers and
+*                       partition headers
+* 1.04  td   11/23/2020 Coverity Warning Fixes
+*       bm   02/12/2021 Updated logic to use BootHdr directly from PMC RAM
+*       ma   03/24/2021 Redirect XilPdi prints to XilLoader
+* 1.05  bm   07/08/2021 Code cleanup
+*       bsv  08/17/2021 Code clean up
+* 1.06  kpt  12/13/2021 Replaced Xil_SecureMemCpy with Xil_SMemCpy
+*       kpt  02/01/2022 Updated XilPdi_ReadBootHdr prototype
+* 1.07  skd  04/21/2022 Misra-C violation Rule 14.3 fixed
+*       bsv  07/06/2022 Added API to read Optional data from Metaheader
+*       bsv  07/08/2022 Code changes related to Optional data in IHT
+*       bm   07/13/2022 Added compatibility check for In-Place PLM Update
+* 1.08  ng   11/11/2022 Updated doxygen comments
+*       dd   03/16/2023 Misra-C violation Rule 17.8 fixed
+*       dd   03/28/2023 Updated doxygen comments
+*       ng   03/30/2023 Updated algorithm and return values in doxygen comments
+*       sk   05/31/2023 Updated Xilpdi_ReadImgHdrTbl to use MetaHdrOfst from
+*                       MetaHdr structure
+*       am   07/03/2023 Updated XilPdi_ReadIhtAndOptionalData to store partition hashes
+*       dd   09/08/2023 Misra-C violation Rule 12.1 fixed
+*       har  02/16/2024 Modified XilPdi_SearchOptionalData as non-static function
+*       am   03/02/2024 Updated MH optimization changes to XilPdi_StoreDigestTable
+*       sk   03/13/2024 Fixed doxygen comments format
+* 1.10  ng   04/30/2024 Fixed doxygen grouping
+*       ng   07/02/2024 Removed dependency on xilplmi library
+*       kpt  10/25/2024 Add SMAP_BUS_WIDTH_LENGTH while calculationg optional data
+*                       start address
+* 1.11  kpt  11/05/2024 Add XilPdi_ReadOptionalData to read optional data
+*       pre  12/09/2024 use PMC RAM for PDI instance instead of PPU1 RAM
+* 1.12  prt  06/04/2025 Fixed Misra-C R8.13 and R15.7 Violations
+* 		abh	 07/16/2025 Fixed GCC warnings
+*       pre  09/16/2025 Updated comments for rtf doc
+*
+* </pre>
+*
+******************************************************************************/
+
+/**
+ * @addtogroup xilpdi_apis XilPDI APIs
+ * @{
+ */
+
+/***************************** Include Files *********************************/
+#include "xilpdi.h"
+#include "xil_io.h"
+#include "xil_util.h"
+
+/************************** Constant Definitions *****************************/
+
+/**************************** Type Definitions *******************************/
+
+/***************** Macros (Inline Functions) Definitions *********************/
+#define XILPDI_PDI_TYPE_PARTIAL_METAHEADER		(0x5U)
+
+#define XILPDI_PDI_TYPE_PARTIAL                         (0x2U)
+
+/************************** Function Prototypes ******************************/
+
+/************************** Variable Definitions *****************************/
+
+/****************************************************************************/
+/**
+ * @brief	This function is used to validate the word checksum for the
+ * 		Image Header table and Partition Headers.
+ * 		Checksum is based on the formula
+ * 		Checksum = ~ (X1 + X2 + X3 + .... + Xn)
+ *
+ * @param	Buffer pointer to the data for which checksum should be calculated
+ * @param	Length of the buffer for which checksum should be calculated.
+ * 		Last word is taken as expected checksum.
+ *
+ * @return
+ * 		- XST_SUCCESS for successful checksum validation.
+ * 		- XST_FAILURE if checksum validation fails.
+ *
+ *****************************************************************************/
+int XilPdi_ValidateChecksum(const void *Buffer, u32 Length)
+{
+	int Status = XST_FAILURE;
+	u32 Checksum = 0U;
+	u32 Count;
+	u32 Len = Length;
+	const u32 *BufferPtr = (const u32 *)Buffer;
+
+	Len >>= XIH_PRTN_WORD_LEN_SHIFT;
+	if (Len < XILPDI_CHECKSUM_MIN_BUF_LEN)
+	{
+	/**
+	 * - Verify the buffer is not empty and has at least 2 values.
+	 * Otherwise, return XST_FAILURE
+	 */
+		goto END;
+	}
+	--Len;
+	/**
+	 * - Calculate the checksum with the formula below
+	 * Checksum = ~ (X1 + X2 + X3 + .... + Xn)
+	 * where X1, X2, ...Xn are data words for which checksum should be calculated
+	 */
+	for (Count = 0U; Count < Len; Count++) {
+		/*
+		 * Read each word from the buffer and add to checksum
+		 */
+		Checksum += BufferPtr[Count];
+	}
+
+	/* Invert checksum */
+	Checksum ^= XILPDI_INVERT_CHECKSUM;
+
+	/**
+	 * - Verify the calculated checksum with the last word (expected checksum) in buffer.
+	 * If the checksum matches, return XST_SUCCESS. Otherwise, return XST_FAILURE.
+	 */
+	if (BufferPtr[Len] != Checksum) {
+		XilPdi_Printf("Error: Checksum 0x%0lx != %0lx\r\n", Checksum,
+			BufferPtr[Len]);
+	} else {
+		Status = XST_SUCCESS;
+	}
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+ * @brief	This function checks the fields of the Image Header Table and
+ * 		validates them. Image Header Table contains the fields that are
+ * 		common across all the partitions and images.
+ *
+ * @param	ImgHdrTbl pointer to the Image Header Table
+ *
+ * @return
+ * 		- XST_SUCCESS on successful Image Header Table validation.
+ * 		- XILPDI_ERR_IHT_CHECKSUM if checksum validation fails.
+ * 		- XILPDI_ERR_NO_OF_IMGS if number of images is less than 0 or more
+ * 		than 32.
+ * 		- XILPDI_ERR_NO_OF_PRTNS if number of partitions is less than 0 or
+ * 		more than 32.
+ *
+ *****************************************************************************/
+int XilPdi_ValidateImgHdrTbl(const XilPdi_ImgHdrTbl * ImgHdrTbl)
+{
+	int Status = XST_FAILURE;
+
+	/**
+	 * - Calculate the checksum of Image Header Table and compare it with the
+	 * expected checksum in Image Header Table. If checksum does not match,
+	 * return XILPDI_ERR_IHT_CHECKSUM error.
+	 */
+	Status = XilPdi_ValidateChecksum(ImgHdrTbl, XIH_IHT_LEN);
+	if (XST_SUCCESS != Status) {
+		Status = XILPDI_ERR_IHT_CHECKSUM;
+		XilPdi_Printf("XILPDI_ERR_IHT_CHECKSUM\n\r");
+		goto END;
+	}
+	/**
+	 * - Verify the number of images is greater than zero and less than or
+	 *   equal to 32. Otherwise, return XILPDI_ERR_NO_OF_IMAGES error.
+	 */
+	if ((ImgHdrTbl->NoOfImgs < XIH_MIN_IMGS) ||
+		(ImgHdrTbl->NoOfImgs > XIH_MAX_IMGS)) {
+		Status = XILPDI_ERR_NO_OF_IMGS;
+		XilPdi_Printf("XILPDI_ERR_NO_OF_IMAGES\n\r");
+		goto END;
+	}
+	/**
+	 * - Verify the number of partitions is greater than zero and less than or equal to 32.
+	 * If verification passes, return XST_SUCCESS. Otherwise, return XILPDI_ERR_NO_OF_PRTNS error.
+	 */
+	if ((ImgHdrTbl->NoOfPrtns < XIH_MIN_PRTNS) ||
+		(ImgHdrTbl->NoOfPrtns > XIH_MAX_PRTNS)) {
+		Status = XILPDI_ERR_NO_OF_PRTNS;
+		XilPdi_Printf("XILPDI_ERR_NO_OF_PRTNS\n\r");
+	}
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function validates the Partition Header.
+*
+* @param	PrtnHdr	is pointer to Partition Header
+*
+* @return
+* 		- XST_SUCCESS on successful Partition Header validation.
+* 		- XILPDI_ERR_ZERO_LENGTH if partition length is 0.
+* 		- XILPDI_ERR_TOTAL_LENGTH if total length does not match encoded and
+* 		unencoded word length.
+* 		- XILPDI_ERR_PRTN_TYPE if partition type is other than elf, cdo, raw,
+* 		raw_elf, cfi_gsc and cfi_gsc_unmask.
+*
+*****************************************************************************/
+int XilPdi_ValidatePrtnHdr(const XilPdi_PrtnHdr * PrtnHdr)
+{
+	int Status = XST_FAILURE;
+	u32 PrtnType;
+
+	/**
+	 * - Verify that the partition length is not zero. Otherwise, return
+	 *   XILPDI_ERR_ZERO_LENGTH error.
+	 */
+	if ((PrtnHdr->UnEncDataWordLen == 0U) || (PrtnHdr->EncDataWordLen == 0U)
+	   || (PrtnHdr->TotalDataWordLen == 0U)) {
+		XilPdi_Printf("Error: Zero length field \n\r");
+		Status = XILPDI_ERR_ZERO_LENGTH;
+		goto END;
+	}
+
+	/**
+	 * - Verify the total partition length is not less than the encrypted data
+	 * word and unencrypted data word length. Otherwise, return
+	 * XILPDI_ERR_TOTAL_LENGTH error.
+	 */
+	if ((PrtnHdr->TotalDataWordLen < PrtnHdr->UnEncDataWordLen) ||
+	   (PrtnHdr->TotalDataWordLen < PrtnHdr->EncDataWordLen)) {
+		XilPdi_Printf("Error: Incorrect total length \n\r");
+		Status =  XILPDI_ERR_TOTAL_LENGTH;
+		goto END;
+	}
+
+	/**
+	 * - Verify that the partition type is one of elf, cdo, raw raw_elf, cfi_gsc or cfi_gsc_unmask.
+	 * If verification passes, return XST_SUCCESS. Otherwise, return XILPDI_ERR_PRTN_TYPE error.
+	 */
+	PrtnType = XilPdi_GetPrtnType(PrtnHdr);
+	if ((PrtnType == XIH_PH_ATTRB_PRTN_TYPE_RSVD) ||
+	   (PrtnType > XIH_PH_ATTRB_PRTN_TYPE_CFI_GSC_UNMASK)) {
+		XilPdi_Printf("Error: Invalid partition \n\r");
+		Status = XILPDI_ERR_PRTN_TYPE;
+		goto END;
+	}
+
+	Status = XST_SUCCESS;
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function reads the boot header.
+*
+* @param	BootHdrPtr is pointer to the address of Boot Header
+*
+*****************************************************************************/
+void XilPdi_ReadBootHdr(const XilPdi_BootHdr **BootHdrPtr)
+{
+	/** - Copy boot header to local variable from PRAM address */
+	*BootHdrPtr = (XilPdi_BootHdr *)(UINTPTR)XIH_BH_PRAM_ADDR;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function Reads the Image Header Table.
+*
+* @param	MetaHdrPtr is pointer to Meta Header table
+*
+* @return
+* 		- XST_SUCCESS on successful read.
+* 		- Error code on unsuccessful copy of image header table.
+*
+*****************************************************************************/
+int XilPdi_ReadImgHdrTbl(XilPdi_MetaHdr * MetaHdrPtr)
+{
+	int Status = XST_FAILURE;
+	u32 SmapBusWidthCheck[SMAP_BUS_WIDTH_WORD_LEN];
+	u32 Offset;
+
+	/**
+	 * - Read the Image header table of 64 bytes
+	 * and update the Image Header Table structure. Return error code if the reading is unsuccessful.
+	 */
+	Status = MetaHdrPtr->DeviceCopy(MetaHdrPtr->FlashOfstAddr + MetaHdrPtr->MetaHdrOfst,
+				(u64)(UINTPTR)SmapBusWidthCheck, SMAP_BUS_WIDTH_LENGTH, 0x0U);
+	if (XST_SUCCESS != Status) {
+		XilPdi_Printf("Device Copy Failed\n\r");
+		goto END;
+	}
+
+	/**
+	 * - Copy image header table. If copy is successful, return XST_SUCCESS. Otherwise, return
+	 * error code. Discard or ignore SMAP header when detected in partial PDIs.
+	 */
+	if ((SMAP_BUS_WIDTH_8_WORD1 == SmapBusWidthCheck[0U]) ||
+		(SMAP_BUS_WIDTH_16_WORD1 == SmapBusWidthCheck[0U]) ||
+		(SMAP_BUS_WIDTH_32_WORD1 == SmapBusWidthCheck[0U])) {
+		Offset = 0U;
+	} else {
+		Status = Xil_SMemCpy((void *)&MetaHdrPtr->ImgHdrTbl,
+				SMAP_BUS_WIDTH_LENGTH, (void *)SmapBusWidthCheck,
+				SMAP_BUS_WIDTH_LENGTH, SMAP_BUS_WIDTH_LENGTH);
+		if (XST_SUCCESS != Status) {
+			XilPdi_Printf("Image Header Table memcpy failed\n\r");
+			goto END;
+		}
+		Offset = SMAP_BUS_WIDTH_LENGTH;
+	}
+
+	Status = MetaHdrPtr->DeviceCopy(MetaHdrPtr->FlashOfstAddr +
+			MetaHdrPtr->MetaHdrOfst + SMAP_BUS_WIDTH_LENGTH,
+			(u64)(UINTPTR)&MetaHdrPtr->ImgHdrTbl + Offset,
+			XIH_IHT_LEN - Offset, 0x0U);
+	if (XST_SUCCESS != Status) {
+		XilPdi_Printf("Device Copy Failed\n\r");
+	}
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function reads IHT and optional data in Image Header Table.
+*
+* @param	MetaHdrPtr is pointer to Meta Header table.
+*
+* @return
+* 			- XST_SUCCESS on successful read.
+* 			- Error code on unsuccessful read.
+*
+*****************************************************************************/
+int XilPdi_ReadIhtAndOptionalData(const XilPdi_MetaHdr * MetaHdrPtr, u8 PdiType)
+{
+	int Status = XST_FAILURE;
+
+	/**
+	 * - Clear 2KB PMC RAM which is allocated to store IHT OPTIONAL DATA.
+	 * If failed to clear, return XST_FAILURE error.
+	 */
+	Status = Xil_SecureZeroize((u8*)(UINTPTR)XIH_PMC_RAM_IHT_OP_DATA_STORE_ADDR,
+		XILPDI_OPTIONAL_DATA_ID_3_MAX_SIZE_2K_BYTES);
+	if (XST_SUCCESS != Status) {
+		XilPdi_Printf("IHT Optional data Zeroize Failed \n\r");
+		goto END;
+	}
+
+	/** - Read the IHT from Meta header. If reading fails, return XST_FAILURE error. */
+	Status = Xil_SecureMemCpy((void *)(UINTPTR)XILPDI_PMCRAM_IHT_COPY_ADDR,
+		XIH_IHT_LEN, (const void*)&MetaHdrPtr->ImgHdrTbl, XIH_IHT_LEN);
+	if (XST_SUCCESS != Status) {
+		XilPdi_Printf("Device Copy Failed \n\r");
+		goto END;
+	}
+
+	/**
+	 * - Read optional data. If reading is successful, return XST_SUCCESS.
+	 * Otherwise, return error code.
+	 */
+	Status = XilPdi_ReadOptionalData(MetaHdrPtr, PdiType);
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function reads optional data in Image Header Table.
+*
+* @param	MetaHdrPtr is pointer to Meta Header table.
+* @param 	PdiType is type of PDI for which optional data is being read
+*
+* @return
+* 			- XST_SUCCESS on successful read.
+* 			- Error code on unsuccessful copy.
+*
+*****************************************************************************/
+int XilPdi_ReadOptionalData(const XilPdi_MetaHdr * MetaHdrPtr, u8 PdiType)
+{
+	int Status = XST_FAILURE;
+	u64 OptionalDataStartAddress;
+
+	/**
+	 * - Read the IHT Optional data from Meta header
+	 */
+	OptionalDataStartAddress = MetaHdrPtr->FlashOfstAddr + MetaHdrPtr->MetaHdrOfst + XIH_IHT_LEN;
+	if ((PdiType == XILPDI_PDI_TYPE_PARTIAL_METAHEADER) ||
+		(PdiType == XILPDI_PDI_TYPE_PARTIAL)) {
+		OptionalDataStartAddress += SMAP_BUS_WIDTH_LENGTH;
+	}
+
+	/**
+	 * - Verify that the length of optional data is less than or equal to 15872 bytes.
+	 * Otherwise, return XILPDI_ERR_OVER_FLOW_OPTIONAL_DATA error.
+	 */
+	if (MetaHdrPtr->ImgHdrTbl.OptionalDataLen > XILPDI_OPTIONAL_DATA_MAX_SIZE_16K_BYTES) {
+		Status = XILPDI_ERR_OVER_FLOW_OPTIONAL_DATA;
+		XilPdi_Printf("Failed, IHT Optional data overflow \n\r");
+		goto END;
+	}
+
+	/**
+	 * - Copy optional data. If copy is successful, return XST_SUCCESS. Otherwise,
+	 * return error code.
+	 */
+	Status = MetaHdrPtr->DeviceCopy(OptionalDataStartAddress, XILPDI_PMCRAM_IHT_DATA_ADDR,
+		(MetaHdrPtr->ImgHdrTbl.OptionalDataLen << XILPDI_WORD_LEN_SHIFT), 0U);
+	if (XST_SUCCESS != Status) {
+		XilPdi_Printf("Device Copy Failed \n\r");
+	}
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function stores digest table for given data Id.
+*
+* @param	MetaHdrPtr is pointer to Meta Header table.
+*
+* @return
+* 			- XST_SUCCESS on successful read.
+* 			- Error code on any failure while reading.
+*
+*****************************************************************************/
+int XilPdi_StoreDigestTable(XilPdi_MetaHdr * MetaHdrPtr)
+{
+	int Status = XST_FAILURE;
+	int StatusTmp = XST_FAILURE;
+	u32 OptionalDataStartAddr;
+	u32 OptionalDataEndAddr;
+	u32 OptionalDataLen;
+	u32 Offset;
+
+	OptionalDataStartAddr = XILPDI_PMCRAM_IHT_DATA_ADDR;
+	OptionalDataEndAddr = OptionalDataStartAddr + (MetaHdrPtr->ImgHdrTbl.OptionalDataLen << XILPDI_WORD_LEN_SHIFT);
+
+	MetaHdrPtr->IsAuthOptimized = (u32)FALSE;
+
+	/* - Search for data ID = 3(digest table) and get optional data address */
+	Offset = (u32)XilPdi_SearchOptionalData(OptionalDataStartAddr, OptionalDataEndAddr,
+		XILPDI_PARTITION_HASH_DATA_ID);
+	/* - Proceed if optional data address is less than end address of IHT optional data. Otherwise, return XST_SUCCESS */
+	if (Offset < OptionalDataEndAddr) {
+		/**
+		 * - Validate optional data length. If length is less than 4 words, return
+		 * XILPDI_ERR_NO_VALID_OPTIONAL_DATA error and if length is greater than 2048 bytes,
+		 * return XILPDI_ERR_OVER_FLOW_OPTIONAL_DATA_AT_DATA_ID_3 error
+		 */
+		OptionalDataLen = ((Xil_In32(Offset) & XIH_OPT_DATA_HDR_LEN_MASK) >>
+			XIH_OPT_DATA_LEN_SHIFT) << XIH_PRTN_WORD_LEN_SHIFT;
+		if (OptionalDataLen < XILPDI_OPTIONAL_DATA_WORD_LEN) {
+				Status = XILPDI_ERR_NO_VALID_OPTIONAL_DATA;
+				goto END;
+		} else if (OptionalDataLen > XILPDI_OPTIONAL_DATA_ID_3_MAX_SIZE_2K_BYTES) {
+			Status = XILPDI_ERR_OVER_FLOW_OPTIONAL_DATA_AT_DATA_ID_3;
+			goto END;
+		} else {
+			/* Misra-C Compliance */
+		}
+
+		/** @verbatim
+
+		 IHT Optional data format:
+		 -------------------------------------------------------------------------
+		 |    0x00    |            Size (31:16)            |    Data Id (15:0)   |
+		 -------------------------------------------------------------------------
+		 |    0x04    |            Data (Size in words)                          |
+		 -------------------------------------------------------------------------
+		 |    Last    |            Checksum (Sum of previous words in DS)        |
+		 -------------------------------------------------------------------------
+		 DigestTableSize is size of Data except first(0x00) and last word(Last)
+
+		 @endverbatim */
+
+		/**
+		 * - Verify that the digest table size is multiples of 52bytes (since each entry in digest
+		 * table consists of a partition number of size 4bytes and a hash of size 48bytes).
+		 * Otherwise, return XILPDI_ERR_INVALID_DIGEST_TABLE_SIZE error.
+		 */
+		MetaHdrPtr->DigestTableSize = OptionalDataLen - XILPDI_OPTIONAL_DATA_DOUBLE_WORD_LEN;
+		if ((MetaHdrPtr->DigestTableSize % sizeof(XilPdi_PrtnHashInfo)) != 0U) {
+			Status = XILPDI_ERR_INVALID_DIGEST_TABLE_SIZE;
+			XilPdi_Printf("Invalid digest table size \n\r");
+			goto END;
+		}
+
+		/**
+		 * - Verify checksum of data structure info. If checksum does not match,
+		 * return XILPDI_ERR_OPTIONAL_DATA_CHECKSUM_FAILED error.
+		 */
+		XSECURE_REDUNDANT_CALL(Status, StatusTmp, XilPdi_ValidateChecksum, (void *)(UINTPTR)Offset,
+				OptionalDataLen);
+		if ((Status != XST_SUCCESS) || (StatusTmp != XST_SUCCESS)) {
+			Status = XILPDI_ERR_OPTIONAL_DATA_CHECKSUM_FAILED;
+			XilPdi_Printf("optional data Checksum failed \n\r");
+			goto END;
+		}
+
+		/**
+		 * - Copy digest table to 0xF201D200U in PMC RAM. If copy fails, return error code.
+		 * Otherwise, return XST_SUCCESS
+		 */
+		Status = Xil_SMemCpy((u8 *)(UINTPTR)XIH_PMC_RAM_IHT_OP_DATA_STORE_ADDR,
+			MetaHdrPtr->DigestTableSize, (u8 *)(UINTPTR)(Offset
+			+ XILPDI_OPTIONAL_DATA_WORD_LEN), MetaHdrPtr->DigestTableSize,
+			MetaHdrPtr->DigestTableSize);
+		if (Status != XST_SUCCESS) {
+			XilPdi_Printf("Partition data memcpy failed\n\r");
+			goto END;
+		}
+		/* Partition number count */
+		MetaHdrPtr->DigestTableSize /= sizeof(XilPdi_PrtnHashInfo);
+		/* Authentication is optimized by the user */
+		MetaHdrPtr->IsAuthOptimized = (u32)TRUE;
+	}
+	Status = XST_SUCCESS;
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function searches for optional data address based on given Data ID
+*
+* @param	StartAddress is start address of IHT optional data
+* @param	EndAddress is end address of IHT optional data
+* @param	DataId is to identify type of data in data structure
+*
+* @return
+*		- Address of desired optional data if given data ID is found
+*		- End address of IHT optional data if given data ID is not found.
+*
+*****************************************************************************/
+u64 XilPdi_SearchOptionalData(u64 StartAddress, u64 EndAddress, u32 DataId)
+{
+	u64 Offset = StartAddress;
+
+	/**
+	 * - Search for the data ID given and return optional data address if data ID
+	 * is found. Otherwise, return end address of IHT optional data.
+	 */
+	while (Offset < EndAddress) {
+		if ((Xil_In64((UINTPTR)Offset) & XIH_OPT_DATA_HDR_ID_MASK) !=
+				DataId) {
+			Offset += ((Xil_In64((UINTPTR)Offset) & XIH_OPT_DATA_HDR_LEN_MASK) >>
+				XIH_OPT_DATA_LEN_SHIFT) << XILPDI_WORD_LEN_SHIFT;
+		}
+		else {
+			break;
+		}
+	}
+
+	return Offset;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function returns address of hash entry for the given partition number
+*
+* @param	PrtnNum Number of partition for which hash entry is requested
+*
+* @param	HashTableSize Size of hash table
+*
+* @return
+*		- Address of hash entry for the given partition number (to skip authentication) if it
+*		present in the hash table.
+*		- NULL if hash entry is not present for the given partition number
+*		(to authenticate the signature as regular flow).
+*
+*****************************************************************************/
+XilPdi_PrtnHashInfo* XilPdi_IsPrtnHashPresent(u32 PrtnNum, u32 HashTableSize)
+{
+	XilPdi_PrtnHashInfo *HashEntry = NULL;
+	XilPdi_PrtnHashInfo *HashTbl = (XilPdi_PrtnHashInfo *)(UINTPTR)XIH_PMC_RAM_IHT_OP_DATA_STORE_ADDR;
+	u32 Index = 0U;
+
+	/*
+	 * Bootgen will place Digest table in the following format:
+	 * -------------------------------------------------------------------------
+	 * |    Partition index (32 bits)     |    Partition Digest(384 bits)      |
+	 * -------------------------------------------------------------------------
+	 */
+
+	 /**
+	  * - Search for the given partition num in hash table and return address of its
+	  * entry if found. Otherwise, return NULL.
+	  */
+	for (Index = 0; Index < HashTableSize; Index++) {
+		if (HashTbl[Index].PrtnNum == PrtnNum) {
+			HashEntry = &HashTbl[Index];
+			break;
+		}
+	}
+
+	return HashEntry;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function reads the Image Headers from the pdi stored in
+*			device (flash/SBI buffer/DDR/SD)
+*
+* @param	MetaHdrPtr is pointer to Meta Header
+*
+* @return
+*		- XST_SUCCESS on successful read.
+*		- Error code on unsuccessful read.
+*
+*****************************************************************************/
+int XilPdi_ReadImgHdrs(const XilPdi_MetaHdr * MetaHdrPtr)
+{
+	int Status = XST_FAILURE;
+	u32 TotalLen = MetaHdrPtr->ImgHdrTbl.NoOfImgs * XIH_IH_LEN;
+
+	/**
+	 * - Read the Image headers of 64 bytes and update the Image Header structure for all images.
+	 * If reading is successful, return XST_SUCCESS. Otherwise, return error code.
+	 */
+	Status = MetaHdrPtr->DeviceCopy(MetaHdrPtr->FlashOfstAddr +
+			((u64)MetaHdrPtr->ImgHdrTbl.ImgHdrAddr * XIH_PRTN_WORD_LEN),
+			(u64)(UINTPTR)MetaHdrPtr->ImgHdr, TotalLen, 0x0U);
+	if (XST_SUCCESS != Status) {
+		XilPdi_Printf("Device Copy Failed\n\r");
+		goto END;
+	}
+
+END:
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function reads the Partition Headers from the pdi stored in
+*			device (flash/SBI buffer/DDR/SD)
+*
+* @param	MetaHdrPtr is pointer to Meta Header
+*
+* @return
+*		- XST_SUCCESS on successful read.
+*		- Error code on unsuccessful read.
+*
+*****************************************************************************/
+int XilPdi_ReadPrtnHdrs(const XilPdi_MetaHdr * MetaHdrPtr)
+{
+	int Status = XST_FAILURE;
+	u32 TotalLen = MetaHdrPtr->ImgHdrTbl.NoOfPrtns * XIH_PH_LEN;
+
+	/**
+	 * - Read the Partition headers of 64 bytes and update the Image Header structure for
+	 * all images. If reading is successful, return XST_SUCCESS. Otherwise, return error code.
+	 */
+	Status = MetaHdrPtr->DeviceCopy(MetaHdrPtr->FlashOfstAddr +
+			((u64)MetaHdrPtr->ImgHdrTbl.PrtnHdrAddr * XIH_PRTN_WORD_LEN),
+			(u64)(UINTPTR)MetaHdrPtr->PrtnHdr, TotalLen, 0x0U);
+	if (XST_SUCCESS != Status) {
+		XilPdi_Printf("Device Copy Failed\n\r");
+	}
+
+	return Status;
+}
+
+/****************************************************************************/
+/**
+* @brief	This function verifies Partition Headers.
+*
+* @param	MetaHdrPtr is pointer to Meta Header table
+*
+* @return
+*		- XST_SUCCESS on success.
+*		- XILPDI_ERR_PH_CHECKSUM on checksum fail.
+*
+*****************************************************************************/
+int XilPdi_VerifyPrtnHdrs(const XilPdi_MetaHdr * MetaHdrPtr)
+{
+	int Status = XST_FAILURE;
+	u32 PrtnIndex;
+
+	/**
+	 * - Verify checksum of all Partition Headers. If verification is passed,
+	 * return XST_SUCCESS. Otherwise, return XILPDI_ERR_PH_CHECKSUM error.
+	 */
+	for (PrtnIndex = 0U; PrtnIndex < MetaHdrPtr->ImgHdrTbl.NoOfPrtns;
+		PrtnIndex++) {
+		Status = XilPdi_ValidateChecksum(&MetaHdrPtr->PrtnHdr[PrtnIndex],
+				XIH_PH_LEN);
+		if (XST_SUCCESS != Status) {
+			Status = XILPDI_ERR_PH_CHECKSUM;
+			goto END;
+		}
+	}
+
+	Status = XST_SUCCESS;
+
+END:
+	return Status;
+}
+
+/**************************************************************************/
+/**
+* @brief	This function verifies Image headers.
+*
+* @param	MetaHdrPtr is pointer to Meta Header table.
+*
+* @return
+*		- XST_SUCCESS on successful image validation.
+*		- XILPDI_ERR_IH_CHECKSUM on checksum fail.
+*
+*****************************************************************************/
+int XilPdi_VerifyImgHdrs(const XilPdi_MetaHdr * MetaHdrPtr)
+{
+	int Status = XST_FAILURE;
+	u32 ImgIndex;
+
+	/**
+	 * - Verify checksum of all image Headers. If verification is passed,
+	 * return XST_SUCCESS. Otherwise, return XILPDI_ERR_IH_CHECKSUM error.
+	 */
+	for (ImgIndex = 0U; ImgIndex < MetaHdrPtr->ImgHdrTbl.NoOfImgs;
+		ImgIndex++) {
+		Status = XilPdi_ValidateChecksum(&MetaHdrPtr->ImgHdr[ImgIndex],
+				XIH_IH_LEN);
+		if (XST_SUCCESS != Status) {
+			Status = XILPDI_ERR_IH_CHECKSUM;
+			goto END;
+		}
+	}
+
+	Status = XST_SUCCESS;
+
+END:
+	return Status;
+}

@@ -1,0 +1,62 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for CSUDMA controller
+
+maintainers:
+  - Abin Joseph <abin.joseph@amd.com>
+
+type: driver
+
+properties:
+  compatible:
+    OneOf:
+      - items:
+        - enum:
+          - xlnx,zynqmp-csudma-1.0
+          - amd,versal2-asudma-1.0
+          - xlnx,pmc-dma
+  reg:
+    description: Physical base address and size of the controller register map
+  xlnx,dma-type:
+    description: |
+      Differentiates the dma controller that driver supports
+      0 - CSUDMA   controller
+      1 - PMCDMA-0 controller
+      2 - PMCDMA-1 controller
+      3 - ASUDMA-0 controller
+      4 - ASUDMA-1 controller
+
+config:
+    - XCsuDma_Config
+
+required:
+    - compatible
+    - reg
+    - xlnx,dma-type
+    - interrupts
+    - interrupt-parent
+
+examples:
+    xcsudma_intr_example.c:
+        - compatible : xlnx,zynqmp-csudma-1.0
+        - interrupts
+    xcsudma_polled_example.c:
+        - compatible : xlnx,zynqmp-csudma-1.0
+        - reg
+    xcsudma_selftest_example.c:
+        - compatible : xlnx,zynqmp-csudma-1.0
+        - reg
+
+tapp:
+   xcsudma_selftest_example.c:
+        declaration: XCsuDma_SelfTestExample
+        hwproperties:
+            - compatible : xlnx,zynqmp-csudma-1.0
+   xcsudma_intr_example.c:
+        declaration: XCsuDma_IntrExample
+        hwproperties:
+            - compatible : xlnx,zynqmp-csudma-1.0
+            - interrupts
+...

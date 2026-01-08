@@ -1,0 +1,55 @@
+# Copyright (C) 2023 - 2024 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for xiltimer library
+
+maintainers:
+  - Appana Durga Kedareswara Rao <appana.durga.kedareswara.rao@amd.com>
+
+type: library
+
+version: 1.3
+
+description: Xiltimer library provides generic timer interface for the timer IP's.
+
+properties:
+  reg:
+    description: Physical base address and size of the controller register map
+
+supported_processors:
+  - psu_cortexa53
+  - psu_cortexr5
+  - psv_cortexa72
+  - psv_cortexr5
+  - psu_pmu
+  - psv_pmc
+  - psv_psm
+  - microblaze
+  - microblaze_riscv
+  - ps7_cortexa9
+  - psx_cortexa78
+  - cortexa78
+  - psx_cortexr52
+  - cortexr52
+  - psx_pmc
+  - pmc
+  - psx_psm
+  - psm
+  - asu
+  - pmc_riscv
+
+supported_os:
+  - standalone
+  - freertos10_xilinx
+
+depends:
+    tmrctr:
+        - reg
+        - clock-frequency
+    ttcps:
+        - reg
+        - xlnx,clock-freq
+    scutimer:
+        - reg
+...

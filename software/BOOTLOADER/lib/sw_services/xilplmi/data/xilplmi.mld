@@ -1,0 +1,78 @@
+###############################################################################
+# Copyright (c) 2018 - 2022 Xilinx, Inc.  All rights reserved.
+# Copyright (c) 2022 - 2025, Advanced Micro Devices, Inc. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+#
+# Modification History
+#
+# Ver   Who  Date     Changes
+# ----- ---- -------- -----------------------------------------------
+# 1.00  kc   9/22/2018 Initial Release
+# 1.10  ssc  3/05/2022 Added configurable options
+# 1.20  dc   7/13/2022 Added OCP configuration option
+#       ma   7/27/2022 Added configurable option for SSIT PLM to PLM
+#                      communication feature
+#       ma   8/10/2022 Changed ssit_plm_to_plm_comm_en default value to true
+# 1.8   skg  12/07/2022 Added plm_add_ppks_en user configuration
+# 1.9   har  02/15/23 Updated library version for 2023.2
+#       rama 08/08/2023 Added option sem_override_dbg_lvl for overriding
+#                       plm_dbg_lvl to 0 for XilSEM enabled designs
+# 2.0   kpt  10/09/2023 Updated library version for 2024.1
+#       ng   11/11/2023 Added option to set number of user modules
+#       dd   01/09/2024 Added user configurable parameter names
+# 2.1   jb   04/10/2024 Update library version for 2024.2
+#       bm   05/20/2024 Add freertos10_xilinx support
+#       sk   06/05/2024 Added config for User Defined PLM Version
+#       pre  07/11/2024 Added configurable option for SSIT secure PLM to PLM
+#                       communication feature
+#       pre  10/22/2024 Added configurable option for CFI selective read feature
+# 2.2   jb   11/18/2024 Updated library version for 2025.1
+#       tri  03/13/2025 Added configurable option for xiltpm library
+#       pre  03/17/2024 Added configurable option for AES and SHA events queuing
+# 2.3	prt  06/04/2025 Update library version for 2025.2
+#
+##############################################################################
+
+OPTION psf_version = 2.1;
+
+BEGIN LIBRARY xilplmi
+  OPTION drc = plmi_drc;
+  OPTION copyfiles = all;
+  OPTION REQUIRES_OS = (standalone freertos10_xilinx);
+  OPTION SUPPORTED_PERIPHERALS = (psu_pmc psu_cortexa72 psv_pmc psv_cortexa72 psv_cortexr5 microblaze psxl_pmc psxl_cortexa78 psxl_cortexr52 psx_pmc psx_cortexa78 psx_cortexr52);
+  OPTION APP_LINKER_FLAGS = "-Wl,--start-group,-lxilplmi,-lxil,-lgcc,-lc,--end-group";
+  OPTION desc = "Xilinx Versal Platform Loader and Manager Interface Library";
+  OPTION VERSION = 2.3;
+  OPTION NAME = xilplmi;
+  PARAM name = plm_uart_dbg_en, desc = "Enables (if enabled in hardware design too) or Disables Debug prints from UART (log to memory done irrespectively)", type = bool, default = true;
+  PARAM name = plm_dbg_lvl, desc = "Selects the debug logs level", type = enum, values = (minimal = "level0", general = "level1", info = "level2", detailed = "level3"), default = "level1";
+  PARAM name = plm_mode, desc = "Selects between Release and Debug modes", type = enum, values = (release = "release", debug = "debug"), default = "release";
+  PARAM name = plm_perf_en, desc = "Enables or Disables Boot time measurement", type = bool, default = true;
+  PARAM name = plm_qspi_en, desc = "Enables (if enabled in hardware design too) or Disables QSPI boot mode", type = bool, default = true;
+  PARAM name = plm_sd_en, desc = "Enables (if enabled in hardware design too) or Disables SD boot mode", type = bool, default = true;
+  PARAM name = plm_ospi_en, desc = "Enables (if enabled in hardware design too) or Disables OSPI boot mode", type = bool, default = true;
+  PARAM name = plm_sem_en, desc = "Enables (if enabled in hardware design too) or Disables SEM feature", type = bool, default = true;
+  PARAM name = plm_secure_en, desc = "Enables or Disbales Secure features", type = bool, default = true;
+  PARAM name = plm_usb_en, desc = "Enables (if enabled in hardware design too) or disables USB boot mode", type = bool, default = false;
+  PARAM name = plm_nvm_en, desc = "Enables or Disables NVM handlers", type = bool, default = false;
+  PARAM name = plm_puf_en, desc = "Enables or Disables PUF handlers", type = bool, default = false;
+  PARAM name = plm_stl_en, desc = "Enables or Disables STL", type = bool, default = false;
+  PARAM name = plm_ocp_en, desc = "Enables or Disables OCP", type = bool, default = true;
+  PARAM name = plm_add_ppks_en, desc = "Enables or Disables additional PPKs", type = bool, default = false;
+  PARAM name = plm_tpm_en, desc = "Enables or Disbales TPM features (valid only for Versal)", type = bool, default = false;
+  PARAM name = ssit_plm_to_plm_comm_en, desc = "Enables or Disables SSIT PLM to PLM communication (valid only for Versal)", type = bool, default = true;
+  PARAM name = ssit_secure_plm_to_plm_comm_en, desc = "Enables or Disables SSIT secure PLM to PLM communication (valid only for Versal)", type = bool, default = false;
+  PARAM name = plm_get_opt_data_en, esc = "Enables or Disables the feature to get optional data (valid only for Versal)", type = bool, default = false;
+  PARAM name = plm_ecdsa_en, desc = "Enables or Disables ECDSA handlers", type = bool, default = true;
+  PARAM name = plm_rsa_en, desc = "Enables or Disables RSA handlers", type = bool, default = true;
+  PARAM name = plm_auth_jtag_en, desc = "Enables or Disables Authenticated JTAG feature", type = bool, default = true;
+  PARAM name = sem_override_dbg_lvl, desc = "Overrides plm_dbg_lvl as 0 for XilSEM designs if enabled (1) ", type = bool, default = true;
+  PARAM name = user_modules_count, desc = "Number of User Modules", type = int, default = 0;
+  PARAM name = xplmi_mode, desc = "Enables server mode for PMC and client mode for APU, RPU and Microblaze", type = enum, values = (mode = "client", mode = "server"), default = "server";
+  PARAM name = xplmi_cache_disable, desc = "Enables/Disables Cache for XilPlmi client library", type = bool, default = true;
+  PARAM name = plm_version_user_defined, desc = "User defined PLM version", type = int, default = 0;
+  PARAM name = timestamp_en, desc = "Enables or Disables Time Stamp prints", type = bool, default = true;
+  PARAM name = cfi_selective_read_en, desc = "Enables or Disables CFI selective read", type = bool, default = false;
+  PARAM name = aes_and_sha_events_queuing_en, desc = "Enables or Disables queuing mechanism of AES and SHA events for Versal (This feature is enabled by default for other devices)", type = bool, default = false;
+  PARAM name = plm_i2c_mb_handshake, desc = "Enable I2C to MB Handshake", type = bool, default = false;
+END LIBRARY

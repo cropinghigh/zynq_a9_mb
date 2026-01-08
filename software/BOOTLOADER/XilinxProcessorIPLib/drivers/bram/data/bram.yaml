@@ -1,0 +1,99 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# Copyright (c) 2021 Xilinx, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for BRAM controller
+
+maintainers:
+  - Appana Durga Kedareswara Rao <appanad.durga.rao@amd.com>
+  - Shubhrajyoti Datta <shubhrajyoti.datta@amd.com>
+
+type: driver
+
+properties:
+  compatible:
+    OneOf:
+      - items:
+        - enum:
+          - xlnx,axi-bram-ctrl-4.1
+          - xlnx,lmb-bram-if-cntlr-4.0
+          - xlnx,axi-bram-ctrl
+          - xlnx,lmb-bram-if-cntlr
+  reg:
+    description: Physical base address and size of the controller register map
+  xlnx,data-width:
+    description: BRAM data width
+  xlnx,ecc:
+    description: Is ECC supported in H/W
+  xlnx,fault-inject:
+    description: Is Fault Injection supported in H/W
+  xlnx,ce-failing-registers:
+    description: Is Correctable Failing Registers supported in H/W
+  xlnx,bram-correctable-failing-data-regs:
+    description: Is Correctable Failing Data Registers supported in H/W
+  xlnx,ue-failing-registers:
+    description: Is Un-correctable Failing Registers supported in H/W
+  xlnx,bram-uncorrectable-failing-data-regs:
+    description: Is Un-correctable Failing Data Registers supported in H/W
+  xlnx,bram-ecc-status-interrupt-present:
+    description: Are ECC status and interrupts supported in H/W
+  xlnx,bram-correctable-counter-bits:
+    description: Number of bits in the Correctable Error Counter
+  xlnx,ecc-onoff-register:
+    description: Is ECC on/off register supported in h/w
+  xlnx,ecc-onoff-reset-value:
+    description: Reset value of the ECC on/off register in h/w
+  xlnx,write-access:
+    description: Is write access enabled in h/w
+  xlnx,bram-mem-base-address:
+    description: Device memory base address
+  xlnx,bram-mem-high-address:
+    description: Device memory high address
+  xlnx,mem-ctrl-base-address:
+    description: Device register base address
+  xlnx,mem-ctrl-high-address:
+    description: Device register base address
+
+config:
+    - XBram_Config
+
+required:
+    - compatible
+    - reg
+    - xlnx,data-width
+    - xlnx,ecc
+    - xlnx,fault-inject
+    - xlnx,ce-failing-registers
+    - xlnx,bram-correctable-failing-data-regs
+    - xlnx,ue-failing-registers
+    - xlnx,bram-uncorrectable-failing-data-regs
+    - xlnx,bram-ecc-status-interrupt-present
+    - xlnx,bram-correctable-counter-bits
+    - xlnx,ecc-onoff-register
+    - xlnx,ecc-onoff-reset-value
+    - xlnx,write-access
+    - xlnx,bram-mem-base-address
+    - xlnx,bram-mem-high-address
+    - xlnx,mem-ctrl-base-address
+    - xlnx,mem-ctrl-high-address
+    - interrupts
+    - interrupt-parent
+
+examples:
+    xbram_intr_example.c:
+        - interrupts
+    xbram_example.c:
+        - reg
+
+tapp:
+  xbram_example.c:
+    declaration: BramExample
+    hwproperties:
+      - reg
+      - xlnx,ecc-status-registers: 1
+  xbram_intr_example.c:
+    declaration: BramIntrExample
+    hwproperties:
+      - interrupts
+...

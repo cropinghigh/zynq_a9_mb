@@ -1,0 +1,73 @@
+/dts-v1/;
+/plugin/;
+
+&{/} {
+    dumb_disp_encoder: disp_encoder {
+            compatible = "dumb-disp-encoder";
+            disp,edid-i2c = <&i2c0>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+            port@0 {
+                reg = <0>;
+                dumb_display_port: endpoint {
+                    remote-endpoint = <&pl_disp_ep>;
+                };
+            };
+        };
+    drm_pl_disp_drv: drm_driver {
+        compatible = "xlnx,pl-disp";
+        dmas = <&axi_vdma_0 0>;
+        dma-names = "dma0";
+        xlnx,vformat = "XR24";
+        xlnx,bridge = <&v_tc_0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        port@0 {
+            reg = <0>;
+            pl_disp_ep: endpoint {
+                remote-endpoint = <&dumb_display_port>;
+            };
+        };
+    };
+    amba_pl: amba_pl {
+        #address-cells = <1>;
+        #size-cells = <1>;
+        compatible = "simple-bus";
+        ranges ;
+
+        axi_dynclk_0: axi_dynclk@43c00000 {
+            compatible = "digilent,axi-dynclk";
+            #clock-cells = <0>;
+            clocks = <&clkc 18>;
+            reg = <0x43c00000 0x10000>;
+        };
+        axi_vdma_0: dma@43000000 {
+            #dma-cells = <1>;
+            compatible = "xlnx,axi-vdma-1.00.a";
+            clock-names = "s_axi_lite_aclk", "m_axi_mm2s_aclk", "m_axis_mm2s_aclk";
+            clocks = <&clkc 18>, <&clkc 18>, <&clkc 18>;
+            interrupt-parent = <&intc>;
+            interrupts = <0 29 4>;
+            reg = <0x43000000 0x10000>;
+            xlnx,flush-fsync = <0x1>;
+            xlnx,num-fstores = <0x1>;
+            xlnx,addrwidth = <0x20>;
+            dma-channel@0 {
+                compatible = "xlnx,axi-vdma-mm2s-channel";
+                interrupts = <0 29 4>;
+                xlnx,datawidth = <0x20>;
+                xlnx,device-id = <0x0>;
+            };
+        };
+        v_tc_0: v_tc@43c10000 {
+            compatible = "xlnx,v-tc-6.2", "xlnx,v-tc-6.1", "xlnx,bridge-v-tc-6.1";
+            interrupt-parent = <&intc>;
+            interrupts = <0 30 4>;
+            reg = <0x43c10000 0x10000>;
+            xlnx,pixels-per-clock = <1>; 
+            clock-names = "s_axi_aclk", "clk";
+            clocks = <&clkc 18>, <&axi_dynclk_0>;
+            xlnx,generator;
+        };
+    };
+};

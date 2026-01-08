@@ -1,0 +1,126 @@
+Copyright 1986-2021 Xilinx, Inc. All Rights Reserved.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2021.1 (lin64) Build 3247384 Thu Jun 10 19:36:07 MDT 2021
+| Date         : Tue Dec 30 00:24:33 2025
+| Host         : indir-homePc running 64-bit Manjaro Linux
+| Command      : report_methodology -file design_1_wrapper_methodology_drc_routed.rpt -pb design_1_wrapper_methodology_drc_routed.pb -rpx design_1_wrapper_methodology_drc_routed.rpx
+| Design       : design_1_wrapper
+| Device       : xc7z010clg400-3
+| Speed File   : -3
+| Design State : Fully Routed
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Report Methodology
+
+Table of Contents
+-----------------
+1. REPORT SUMMARY
+2. REPORT DETAILS
+
+1. REPORT SUMMARY
+-----------------
+            Netlist: netlist
+          Floorplan: design_1
+      Design limits: <entire design considered>
+             Max violations: <unlimited>
+             Violations found: 17
++-----------+------------------+----------------------------------------------------+------------+
+| Rule      | Severity         | Description                                        | Violations |
++-----------+------------------+----------------------------------------------------+------------+
+| TIMING-1  | Critical Warning | Invalid clock waveform on Clock Modifying Block    | 1          |
+| TIMING-2  | Critical Warning | Invalid primary clock source pin                   | 1          |
+| TIMING-3  | Critical Warning | Invalid primary clock on Clock Modifying Block     | 1          |
+| TIMING-4  | Critical Warning | Invalid primary clock redefinition on a clock tree | 1          |
+| TIMING-18 | Warning          | Missing input or output delay                      | 12         |
+| XDCB-5    | Warning          | Runtime inefficient way to find pin objects        | 1          |
++-----------+------------------+----------------------------------------------------+------------+
+
+2. REPORT DETAILS
+-----------------
+TIMING-1#1 Critical Warning
+Invalid clock waveform on Clock Modifying Block  
+Invalid clock waveform for clock hdmi_pxlClk specified at a BUFR output design_1_i/axi_dynclk_0/U0/BUFR_inst/O that does not match the CMB settings. The waveform of the clock is 6.734 {0 3.367}. The expected waveform is 6.499 {0 2.6}
+Related violations: <none>
+
+TIMING-2#1 Critical Warning
+Invalid primary clock source pin  
+A primary clock hdmi_serClk is created on an inappropriate pin design_1_i/axi_dynclk_0/U0/BUFIO_inst/O. It is recommended to create a primary clock only on a proper clock source (input port or primitive output pin with no timing arc)
+Related violations: <none>
+
+TIMING-3#1 Critical Warning
+Invalid primary clock on Clock Modifying Block  
+A primary clock hdmi_pxlClk is created on the output pin or net design_1_i/axi_dynclk_0/U0/BUFR_inst/O of a Clock Modifying Block
+Related violations: <none>
+
+TIMING-4#1 Critical Warning
+Invalid primary clock redefinition on a clock tree  
+Invalid clock redefinition on a clock tree. The primary clock hdmi_serClk is defined downstream of clock I and overrides its insertion delay and/or waveform definition
+Related violations: <none>
+
+TIMING-18#1 Warning
+Missing input or output delay  
+An output delay is missing on LED_D10[0] relative to clock(s) clk_fpga_3
+Related violations: <none>
+
+TIMING-18#2 Warning
+Missing input or output delay  
+An output delay is missing on LED_D11[0] relative to clock(s) hdmi_pxlClk
+Related violations: <none>
+
+TIMING-18#3 Warning
+Missing input or output delay  
+An output delay is missing on LED_D12[0] relative to clock(s) hdmi_pxlClk
+Related violations: <none>
+
+TIMING-18#4 Warning
+Missing input or output delay  
+An output delay is missing on LED_D9[0] relative to clock(s) clk_fpga_0
+Related violations: <none>
+
+TIMING-18#5 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_clk_n relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+TIMING-18#6 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_clk_p relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+TIMING-18#7 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_data_n[0] relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+TIMING-18#8 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_data_n[1] relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+TIMING-18#9 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_data_n[2] relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+TIMING-18#10 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_data_p[0] relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+TIMING-18#11 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_data_p[1] relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+TIMING-18#12 Warning
+Missing input or output delay  
+An output delay is missing on TMDS_data_p[2] relative to clock(s) hdmi_serClk
+Related violations: <none>
+
+XDCB-5#1 Warning
+Runtime inefficient way to find pin objects  
+The option '-through : [get_pins -filter {NAME =~ *SyncAsync*/oSyncStages_reg[0]/D} -hier]' of constraint 'set_false_path' uses inefficient query to find pin objects (see constraint position '14' in the Timing Constraint window in Vivado IDE). To reduce runtime, it is recommended to get the pins through the cell objects. Please refer to Using Constraints Guide (Constraints Efficiency). An example of optimal query is: get_pins -filter {REF_PIN_NAME=~yy*} -of_objects [get_cells -hierarchical xx*].
+Current XDC: /home/indir/KiCad/zynq_a9_mb/software/FPGA_VIVADO/Platform/Platform.gen/sources_1/bd/design_1/ip/design_1_rgb2dvi_0_0/src/rgb2dvi.xdc (Line: 5)
+Related violations: <none>
+
+

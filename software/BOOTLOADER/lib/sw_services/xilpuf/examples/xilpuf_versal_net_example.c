@@ -1,0 +1,817 @@
+/******************************************************************************
+* Copyright (c) 2022 - 2023 Xilinx, Inc.  All rights reserved.
+* Copyright (c) 2022 - 2025 Advanced Micro Devices, Inc. All Rights Reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+
+/*****************************************************************************/
+/**
+  *
+  * @file xilpuf_versal_net_example.c
+  *
+  * This file illustrates encryption of red key, UDS and DME private keys using
+  * PUF KEY. It can also be used for generating only PUF ID.
+  * To build this application, xilmailbox library must be included in BSP and
+  * xilsecure must be in client mode and xilpuf in server mode.
+  *
+  * <pre>
+  * MODIFICATION HISTORY:
+  *
+  * Ver   Who   Date     Changes
+  * ----- ---  -------- -------------------------------------------------------
+  * 1.0   har  06/24/22 Initial release
+  * 2.1   am   04/13/23 Fix PUF auxiliary convergence error
+  * 2.2   am   05/03/23 Added KAT before crypto usage
+  *       mb   08/09/23 Declare variables that are passed to server in data
+  *	  vss	11/22/23 Added header file required for SDT flow
+  * 2.3	  vss	03/06/24 Removed server related APIs
+  * 2.4   har   05/06/24 Fixed issue in case of regeneration from eFUSE cache
+  * 2.6   rpu   07/15/25 Fixed GCC warnings
+  *@note
+  *
+ *****************************************************************************/
+/***************************** Include Files *********************************/
+#ifdef SDT
+#include "xpuf_bsp_config.h"
+#endif
+#include "xpuf_client.h"
+#include "xsecure_aesclient.h"
+#include "xsecure_katclient.h"
+#include "xnvm_efuseclient.h"
+#include "xil_util.h"
+#include "xil_cache.h"
+#include "xilpuf_versal_net_example.h"
+#include "xparameters.h"
+
+/************************** Constant Definitions ****************************/
+#define XPUF_RED_KEY_LEN_IN_BITS		(XPUF_RED_KEY_LEN_IN_BYTES * 8U)
+						/* Red Key length in Bits */
+#define XPUF_UDS_LEN_IN_BYTES			(48U)
+						/* UDS length in bytes */
+#define XPUF_UDS_LEN_IN_BITS			(XPUF_UDS_LEN_IN_BYTES * 8U)
+						/* UDS length in bits */
+#define XPUF_DME_PRIV_KEY_LEN_IN_BYTES		(48U)
+						/* DME private key length in bytes */
+#define XPUF_IV_LEN_IN_BYTES			(12U)
+						/* IV Length in bytes */
+#define XPUF_IV_LEN_IN_BITS			(XPUF_IV_LEN_IN_BYTES * 8U)
+						/* IV length in Bits */
+#define XPUF_GCM_TAG_SIZE			(16U)
+						/* GCM tag Length in bytes */
+#define XPUF_HD_LEN_IN_WORDS			(386U)
+#define XPUF_ID_LEN_IN_BYTES			(XPUF_ID_LEN_IN_WORDS * \
+							XPUF_WORD_LENGTH)
+#define XSECURE_SHARED_MEM_SIZE_IN_BYTES	sizeof(XSecure_AesDataBlockParams)
+#define XPUF_AES_KEY_SIZE_128BIT_WORDS		(4U)
+#define XPUF_AES_KEY_SIZE_256BIT_WORDS		(8U)
+
+#define XPUF_UDS_IV_INC_VAL			(0x1)
+#define XPUF_DME0_IV_INC_VAL			(0x2)
+#define XPUF_DME1_IV_INC_VAL			(0x3)
+#define XPUF_DME2_IV_INC_VAL			(0x4)
+#define XPUF_DME3_IV_INC_VAL			(0x5)
+
+#define XPUF_BYTE_0_MASK			(0x000000FFU)
+#define XPUF_BYTE_1_MASK			(0x0000FF00U)
+#define XPUF_BYTE_2_MASK			(0x00FF0000U)
+#define XPUF_BYTE_3_MASK			(0xFF000000U)
+
+#define XPUF_SHIFT_24				(24U)
+#define XPUF_SHIFT_8				(8U)
+
+#define XPUF_MAX_DME_MODE_VAL			(0xF)
+/***************************** Type Definitions *******************************/
+typedef struct{
+	u8 EncRedKey;
+	u8 EncUds;
+	u8 EncDmePrivKey0;
+	u8 EncDmePrivKey1;
+	u8 EncDmePrivKey2;
+	u8 EncDmePrivKey3;
+} XPuf_EncryptOption;
+
+typedef struct{
+	u8 BlackKey[XPUF_RED_KEY_LEN_IN_BYTES];
+	u8 FormattedBlackKey[XPUF_RED_KEY_LEN_IN_BITS];
+	u8 UdsPrime[XPUF_UDS_LEN_IN_BYTES];
+	u8 EncDmeKey0[XPUF_DME_PRIV_KEY_LEN_IN_BYTES];
+	u8 EncDmeKey1[XPUF_DME_PRIV_KEY_LEN_IN_BYTES];
+	u8 EncDmeKey2[XPUF_DME_PRIV_KEY_LEN_IN_BYTES];
+	u8 EncDmeKey3[XPUF_DME_PRIV_KEY_LEN_IN_BYTES];
+} XPuf_EncryptedData;
+
+/************************** Variable Definitions ******************************/
+/* shared memory allocation */
+static u8 SharedMem[XSECURE_SHARED_MEM_SIZE_IN_BYTES] __attribute__((aligned(64U)))
+				__attribute__ ((section (".data.Data")));
+static XPuf_EncryptedData EncData __attribute__((aligned(64U))) __attribute__ ((section (".data.EncData")));
+static XPuf_DataAddr PufDataAddr __attribute__((aligned(64U))) __attribute__ ((section (".data.PufDataAddr")));
+
+static u8 Iv[XPUF_IV_LEN_IN_BYTES] __attribute__ ((section (".data.Iv")));
+static u8 InputData[XPUF_DME_PRIV_KEY_LEN_IN_BYTES] __attribute__ ((section (".data.InputData")));
+static u8 UpdatedIv[XPUF_IV_LEN_IN_BYTES] __attribute__ ((section (".data.UpdatedIv")));
+static XPuf_EncryptedData PrgmEncData __attribute__((aligned(64U))) __attribute__ ((section (".data.PrgmEncData")));
+
+/************************** Function Prototypes ******************************/
+static int XPuf_GeneratePufKekAndId(XPuf_ClientInstance PufClientInstance);
+static int XPuf_GenerateEncryptedData(XMailbox *MailboxPtr);
+static int XPuf_EncryptData(XSecure_ClientInstance *SecureClientInstance, char* Data,
+	u32 DataLen, u8* Iv, u8* OutputData);
+static void XPuf_GetIv(u8* Iv, u8 IncVal, u8* UpdatedIv);
+static void XPuf_ShowData(const u8* Data, u32 Len);
+static int XPuf_FormatAesKey(const u8* Key, u8* FormattedKey, u32 KeyLen);
+static int XPuf_PrgmUdsAndDmeEfuses(XNvm_ClientInstance *NvmClientInstance);
+static u32 XPuf_ReverseByteOrder(u32 Data);
+
+/************************** Function Definitions *****************************/
+int main(void)
+{
+	int Status = XST_FAILURE;
+	int ReleaseStatus = XST_FAILURE;
+	XMailbox MailboxInstance;
+	XPuf_ClientInstance PufClientInstance;
+	XNvm_ClientInstance NvmClientInstance;
+	u8 GenKek = XPUF_GENERATE_KEK_N_ID;
+
+#if (defined(versal) && !defined(VERSAL_NET))
+	#error "This example is supported for VERSAL_NET device only"
+#endif
+
+#ifdef XPUF_CACHE_DISABLE
+		Xil_DCacheDisable();
+#endif
+
+	Status = XMailbox_Initialize(&MailboxInstance, 0U);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Mailbox initialization failed %x\r\n", Status);
+		goto END;
+	}
+
+	Status = XPuf_ClientInit(&PufClientInstance, &MailboxInstance);
+	if (Status != XST_SUCCESS) {
+		xil_printf("PUF Client Initilaisation failed \r\n");
+		goto END;
+	}
+
+	Status = XNvm_ClientInit(&NvmClientInstance, &MailboxInstance);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Client initialization failed %x\r\n", Status);
+		goto END;
+	}
+
+	Status = XPuf_SetSlrIndex(&PufClientInstance, XPUF_SLR_INDEX_0);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Invalid SlrIndex \r\n");
+		goto END;
+	}
+
+	/* Set shared memory */
+	Status = XMailbox_SetSharedMem(&MailboxInstance, (u64)(UINTPTR)(SharedMem),
+			XSECURE_SHARED_MEM_SIZE_IN_BYTES);
+	if (Status != XST_SUCCESS) {
+		xil_printf("\r\n Shared memory initialization failed");
+		goto RELEASE_END;
+	}
+
+	/* Generate PUF Key and PUF ID*/
+	Status = XPuf_GeneratePufKekAndId(PufClientInstance);
+	if (Status == XST_SUCCESS) {
+		xil_printf("Successfully completed PUF operation \r\n");
+	}
+	else {
+		xil_printf("PUF operation failed %x\r\n", Status);
+		goto RELEASE_END;
+	}
+
+	if (GenKek == TRUE) {
+		Status = XPuf_GenerateEncryptedData(&MailboxInstance);
+		if (Status == XST_SUCCESS) {
+			xil_printf("Successfully encrypted data \r\n");
+		}
+		else {
+			xil_printf("Encryption failed %x\r\n", Status);
+		}
+	}
+
+	Status =  XPuf_PrgmUdsAndDmeEfuses(&NvmClientInstance);
+
+RELEASE_END:
+	ReleaseStatus = XMailbox_ReleaseSharedMem(&MailboxInstance);;
+	if (ReleaseStatus != XST_SUCCESS) {
+		xil_printf("\r\n Mailbox shared memory release failed\n\r");
+	}
+
+END:
+	if (Status != XST_SUCCESS) {
+		xil_printf("xilpuf versal_net example failed with Status:%08x\r\n",Status);
+	}
+	else {
+		xil_printf("Successfully ran xilpuf versal_net example\r\n");
+	}
+
+	return Status;
+}
+
+/******************************************************************************/
+/**
+ *
+ * @brief	This function generates PUF KEY by PUF registration or PUF on demand
+ * 			regeneration as per the user provided inputs.
+ *
+ * @return
+ *		- XST_SUCCESS - if PUF_KEY generation was successful.
+ *		- XPUF_ERROR_INVALID_PARAM - PufData is NULL.
+ *		- XPUF_ERROR_INVALID_SYNDROME_MODE - Incorrect Registration mode.
+ *		- XPUF_ERROR_SYNDROME_WORD_WAIT_TIMEOUT - Timeout occurred while waiting
+ *			for PUF Syndrome data.
+ *		- XPUF_ERROR_SYNDROME_DATA_OVERFLOW - Syndrome data overflow reported
+ *			by PUF controller or more than required data is
+ *			 provided by PUF controller.
+ *		- XPUF_ERROR_SYNDROME_DATA_UNDERFLOW - Number of syndrome data words
+ *			are less than expected number of words.
+ *		- XPUF_ERROR_INVALID_REGENERATION_TYPE - Selection of invalid
+ *			regeneration type.
+ *		- XPUF_ERROR_CHASH_NOT_PROGRAMMED - Helper data not provided.
+ *		- XPUF_ERROR_PUF_STATUS_DONE_TIMEOUT - Timeout before Status was done.
+ *		- XST_FAILURE - if PUF KEY generation failed.
+ *
+ ******************************************************************************/
+static int XPuf_GeneratePufKekAndId(XPuf_ClientInstance PufClientInstance)
+{
+	int Status = XST_FAILURE;
+	u32 PUF_HelperData[XPUF_HD_LEN_IN_WORDS] = {0U};
+	u32 PufId[XPUF_ID_LEN_IN_WORDS] = {0U};
+	u32 SyndromeData[XPUF_MAX_SYNDROME_DATA_LEN_IN_WORDS] = {0U};
+	u32 Chash, Aux;
+	u8 GenKekNId = XPUF_GENERATE_KEK_N_ID;
+	u8 KeyGenOption = XPUF_KEY_GENERATE_OPTION;
+
+	PufDataAddr.ShutterValue = XPUF_SHUTTER_VALUE;
+	PufDataAddr.GlobalVarFilter = XPUF_GLBL_VAR_FLTR_OPTION;
+	PufDataAddr.RoSwapVal = XPUF_RO_SWAP_VAL;
+	PufDataAddr.PufIDAddr = (u64)(UINTPTR)PufId;
+	PufDataAddr.AuxAddr = (u64)(UINTPTR)&Aux;
+	PufDataAddr.ChashAddr = (u64)(UINTPTR)&Chash;
+
+	xil_printf("PUF ShutterValue : %02x \r\n", PufDataAddr.ShutterValue);
+	xil_printf("PUF Ring Oscillator Swap Value : %02x \r\n", PufDataAddr.RoSwapVal);
+
+	if ((GenKekNId == TRUE && KeyGenOption == XPUF_REGEN_ON_DEMAND) || GenKekNId == FALSE) {
+		if (GenKekNId == FALSE) {
+			PufDataAddr.PufOperation = XPUF_REGEN_ID_ONLY;
+		}
+		else {
+			PufDataAddr.PufOperation = XPUF_REGEN_ON_DEMAND;
+		}
+
+		PufDataAddr.ReadOption = XPUF_READ_HD_OPTION;
+		if (PufDataAddr.ReadOption == XPUF_READ_FROM_RAM) {
+			Chash = XPUF_CHASH;
+			Aux = XPUF_AUX;
+			PufDataAddr.SyndromeAddr = XPUF_SYN_DATA_ADDRESS;
+			xil_printf("Reading helper data from DDR\r\n");
+		}
+		else if (PufDataAddr.ReadOption == XPUF_READ_FROM_EFUSE_CACHE) {
+			xil_printf("Reading helper data from eFUSE cache \r\n");
+		}
+		else {
+			xil_printf("Invalid read option for reading helper data\r\n");
+			goto END;
+		}
+
+		Status = XPuf_Regeneration(&PufClientInstance, (u64)(UINTPTR)&PufDataAddr);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Puf Regeneration failed with error:%x\r\n", Status);
+			goto END;
+		}
+		xil_printf("PUF ID : ");
+		XPuf_ShowData((u8*)PufId, XPUF_ID_LEN_IN_BYTES);
+	}
+	else if (GenKekNId == TRUE && KeyGenOption == XPUF_REGISTRATION) {
+		PufDataAddr.PufOperation = XPUF_REGISTRATION;
+		PufDataAddr.SyndromeDataAddr = (u64)(UINTPTR)SyndromeData;
+		Status = XPuf_Registration(&PufClientInstance, (u64)(UINTPTR)&PufDataAddr);
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+
+		xil_printf("PUF Helper data Start!!!\r\n");
+		Status = Xil_SMemCpy(PUF_HelperData, XPUF_4K_PUF_SYN_LEN_IN_BYTES,
+				(u8 *)(UINTPTR)PufDataAddr.SyndromeDataAddr, XPUF_4K_PUF_SYN_LEN_IN_BYTES,
+				XPUF_4K_PUF_SYN_LEN_IN_BYTES);
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+		PUF_HelperData[XPUF_HD_LEN_IN_WORDS - 2U] = Chash;
+		/** PLM left shifts the the AUX value by 4-bits for NVM provisioning. During regeneration
+		 *  from BootHeader, the ROM expects PUF AUX value in below format:
+		 *
+		 *	-------------------------------------------------------------------------
+		 *	|    0x00    |              AUX (23:4)                   | AUX_EN (3:0) |
+		 *	-------------------------------------------------------------------------
+		 *
+		 *  Any non-zero value in AUX_EN is causing PUF convergence error. Hence left shifting the
+		 *  AUX value by 4-bits.
+		 */
+		PUF_HelperData[XPUF_HD_LEN_IN_WORDS - 1U] = (Aux << XIL_SIZE_OF_NIBBLE_IN_BITS);
+		XPuf_ShowData((u8*)PUF_HelperData, XPUF_HD_LEN_IN_WORDS * XPUF_WORD_LENGTH);
+		xil_printf("Chash: %02x \r\n", Chash);
+		xil_printf("Aux: %02x \r\n", (Aux << XIL_SIZE_OF_NIBBLE_IN_BITS));
+		xil_printf("PUF Helper data End\r\n");
+		xil_printf("PUF ID : ");
+		XPuf_ShowData((u8*)PufId, XPUF_ID_LEN_IN_BYTES);
+	}
+	else {
+		xil_printf("Invalid PUF Operation");
+	}
+
+END:
+	return Status;
+}
+
+/******************************************************************************/
+/**
+ * @brief	This function generates Encrypted data
+ *
+ * @param	MailboxPtr Pointer to mailbox instance
+ *
+ * @return
+ * 		- XST_SUCCESS - if encryption was successful
+ * 		- XST_FAILURE - On failure of AES Encrypt Initialization,
+ * 			AES Encrypt data.
+ *
+ ******************************************************************************/
+static int XPuf_GenerateEncryptedData(XMailbox *MailboxPtr)
+{
+	int Status = XST_FAILURE;
+	XSecure_ClientInstance SecureClientInstance;
+	XPuf_EncryptOption EncOption;
+	XPuf_EncryptedData *EncryptedData = &EncData;
+
+	EncOption.EncRedKey = XPUF_ENCRYPT_RED_KEY;
+	EncOption.EncUds = XPUF_ENCRYPT_UDS;
+	EncOption.EncDmePrivKey0 = XPUF_ENCRYPT_DME_PRIV_KEY_0;
+	EncOption.EncDmePrivKey1 = XPUF_ENCRYPT_DME_PRIV_KEY_1;
+	EncOption.EncDmePrivKey2 = XPUF_ENCRYPT_DME_PRIV_KEY_2;
+	EncOption.EncDmePrivKey3 = XPUF_ENCRYPT_DME_PRIV_KEY_3;
+
+	Status = XSecure_ClientInit(&SecureClientInstance, MailboxPtr);
+	if (Status != XST_SUCCESS) {
+		goto END;
+	}
+
+    /* Run KAT for the Aes driver so that it's ready to use */
+	Status = XSecure_AesEncryptKat(&SecureClientInstance);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Aes Encrypt KAT failed %x\n\r", Status);
+		goto END;
+	}
+
+	if (Xil_Strnlen(XPUF_IV, (XPUF_IV_LEN_IN_BYTES * 2U)) ==
+		(XPUF_IV_LEN_IN_BYTES * 2U)) {
+		Status = Xil_ConvertStringToHexBE((const char *)(XPUF_IV), Iv,
+			XPUF_IV_LEN_IN_BITS);
+		if (Status != XST_SUCCESS) {
+			xil_printf("String Conversion error (IV):%08x !!!\r\n", Status);
+			goto END;
+		}
+	}
+	else {
+		xil_printf("Provided IV length is wrong\r\n");
+		goto END;
+	}
+
+	if (EncOption.EncRedKey == TRUE) {
+		xil_printf("Encryption started for Red key : \r\n");
+		Status = XPuf_EncryptData(&SecureClientInstance,
+			XPUF_RED_KEY, XPUF_RED_KEY_LEN_IN_BYTES,
+			Iv, EncryptedData->BlackKey);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Black key generation failed \r\n");
+			goto END;
+		}
+
+		Status = XPuf_FormatAesKey(EncryptedData->BlackKey,
+			EncryptedData->FormattedBlackKey, XPUF_RED_KEY_LEN_IN_BYTES);
+		if (Status == XST_SUCCESS) {
+			xil_printf("Black Key: \n\r");
+			XPuf_ShowData((u8*)EncryptedData->FormattedBlackKey, XPUF_RED_KEY_LEN_IN_BYTES);
+		}
+	}
+
+	if (EncOption.EncUds == TRUE) {
+		xil_printf("Encryption started for UDS : \r\n");
+		Status = Xil_SMemCpy(UpdatedIv, XPUF_IV_LEN_IN_BYTES,
+			Iv, XPUF_IV_LEN_IN_BYTES, XPUF_IV_LEN_IN_BYTES);
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+		XPuf_GetIv(Iv, XPUF_UDS_IV_INC_VAL, UpdatedIv);
+		Status = XPuf_EncryptData(&SecureClientInstance,
+			XPUF_UDS, XPUF_UDS_LEN_IN_BYTES,
+			UpdatedIv, EncryptedData->UdsPrime);
+		if(Status != XST_SUCCESS){
+			xil_printf("UDS Prime generation failed \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("UDS Prime: \n\r");
+			XPuf_ShowData((u8*)EncryptedData->UdsPrime, XPUF_UDS_LEN_IN_BYTES);
+		}
+	}
+
+	if (EncOption.EncDmePrivKey0 == TRUE) {
+		xil_printf("Encryption started for DME Private Key 0 : \r\n");
+		Status = Xil_SMemCpy(UpdatedIv, XPUF_IV_LEN_IN_BYTES,
+			Iv, XPUF_IV_LEN_IN_BYTES, XPUF_IV_LEN_IN_BYTES);
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+		XPuf_GetIv(Iv, XPUF_DME0_IV_INC_VAL, UpdatedIv);
+		Status = XPuf_EncryptData(&SecureClientInstance,
+			XPUF_DME_PRIV_KEY_0, XPUF_DME_PRIV_KEY_LEN_IN_BYTES,
+			UpdatedIv, EncryptedData->EncDmeKey0);
+		if(Status != XST_SUCCESS){
+			xil_printf("DME Priv Key 0 encryption failed \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Encrypted DME Private Key 0: \n\r");
+			XPuf_ShowData((u8*)EncryptedData->EncDmeKey0,XPUF_DME_PRIV_KEY_LEN_IN_BYTES);
+		}
+	}
+
+	if (EncOption.EncDmePrivKey1 == TRUE) {
+		xil_printf("Encryption started for DME Private Key 1 : \r\n");
+		Status = Xil_SMemCpy(UpdatedIv, XPUF_IV_LEN_IN_BYTES,
+			Iv, XPUF_IV_LEN_IN_BYTES, XPUF_IV_LEN_IN_BYTES);
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+		XPuf_GetIv(Iv, XPUF_DME1_IV_INC_VAL, UpdatedIv);
+		Status = XPuf_EncryptData(&SecureClientInstance,
+			XPUF_DME_PRIV_KEY_1, XPUF_DME_PRIV_KEY_LEN_IN_BYTES,
+			UpdatedIv,  EncryptedData->EncDmeKey1);
+		if(Status != XST_SUCCESS) {
+			xil_printf("DME Priv Key 1 encryption failed \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Encrypted DME Private Key 1: \n\r");
+			XPuf_ShowData((u8*)EncryptedData->EncDmeKey1,XPUF_DME_PRIV_KEY_LEN_IN_BYTES);
+		}
+	}
+
+	if (EncOption.EncDmePrivKey2 == TRUE) {
+		xil_printf("Encryption started for DME Private Key 2 : \r\n");
+		Status = Xil_SMemCpy(UpdatedIv, XPUF_IV_LEN_IN_BYTES,
+			Iv, XPUF_IV_LEN_IN_BYTES, XPUF_IV_LEN_IN_BYTES);
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+		XPuf_GetIv(Iv, XPUF_DME2_IV_INC_VAL, UpdatedIv);
+		Status = XPuf_EncryptData(&SecureClientInstance,
+			XPUF_DME_PRIV_KEY_2, XPUF_DME_PRIV_KEY_LEN_IN_BYTES,
+			UpdatedIv,  EncryptedData->EncDmeKey2);
+		if(Status != XST_SUCCESS) {
+			xil_printf("DME Priv Key 2 encryption failed \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Encrypted DME Private Key 2: \n\r");
+			XPuf_ShowData((u8*)EncryptedData->EncDmeKey2, XPUF_DME_PRIV_KEY_LEN_IN_BYTES);
+		}
+	}
+
+	if (EncOption.EncDmePrivKey3 == TRUE) {
+		xil_printf("Encryption started for DME Private Key 3 : \r\n");
+		Status = Xil_SMemCpy(UpdatedIv, XPUF_IV_LEN_IN_BYTES,
+			Iv, XPUF_IV_LEN_IN_BYTES, XPUF_IV_LEN_IN_BYTES);
+		if (Status != XST_SUCCESS) {
+			goto END;
+		}
+		XPuf_GetIv(Iv, XPUF_DME3_IV_INC_VAL, UpdatedIv);
+		Status = XPuf_EncryptData(&SecureClientInstance,
+			XPUF_DME_PRIV_KEY_3, XPUF_DME_PRIV_KEY_LEN_IN_BYTES,
+			UpdatedIv, EncryptedData->EncDmeKey3);
+		if(Status != XST_SUCCESS){
+			xil_printf("DME Priv Key 3 encryption failed \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Encrypted DME Private Key 3: \n\r");
+			XPuf_ShowData((u8*)EncryptedData->EncDmeKey3, XPUF_DME_PRIV_KEY_LEN_IN_BYTES);
+		}
+	}
+
+END:
+	return Status;
+}
+
+/******************************************************************************/
+/**
+ * @brief	This function encrypts the data using PUF Key and IV
+ *
+ * @param	SecureClientInstance Pointer to Xilsecure client instance
+ * @param	Data Pointer to data to be encrypted
+ * @param	DataLen Length of data to be encrypted in bytes
+ * @param	Iv Pointer to IV for encryption
+ * @param	OutputData Pointer to buffer where encrypted data will be stored
+ *
+ * @return
+ * 		- XST_SUCCESS - if encryption was successful
+ * 		- XST_FAILURE - On failure of AES Encrypt Initialization,
+ * 			AES Encrypt data.
+ *
+ ******************************************************************************/
+static int XPuf_EncryptData(XSecure_ClientInstance *SecureClientInstance, char* Data, u32 DataLen, u8* Iv, u8* OutputData)
+{
+	u8 GcmTag[XPUF_GCM_TAG_SIZE];
+	int Status = XST_FAILURE;
+
+	if (Xil_Strnlen(Data, (DataLen * 2U)) == (DataLen * 2U)) {
+		Status = Xil_ConvertStringToHexBE((const char *)Data,
+			InputData, DataLen*8U);
+		if (Status != XST_SUCCESS) {
+			xil_printf("String Conversion error (Data):%08x \r\n", Status);
+			goto END;
+		}
+	}
+	else {
+		xil_printf("Provided input data length is wrong\r\n");
+		goto END;
+	}
+
+	xil_printf("Data to be encrypted: \n\r");
+	XPuf_ShowData(InputData, DataLen);
+
+	xil_printf("IV: \n\r");
+	XPuf_ShowData(Iv, XPUF_IV_LEN_IN_BYTES);
+
+	Xil_DCacheFlushRange((UINTPTR)Iv, XPUF_IV_LEN_IN_BYTES);
+	Xil_DCacheFlushRange((UINTPTR)InputData, DataLen);
+
+	/* Initialize the Aes driver so that it's ready to use */
+	Status = XSecure_AesInitialize(SecureClientInstance);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Aes init failed %x\n\r", Status);
+		goto END;
+	}
+
+	Xil_DCacheInvalidateRange((UINTPTR)OutputData, DataLen);
+	Xil_DCacheInvalidateRange((UINTPTR)GcmTag, XPUF_GCM_TAG_SIZE);
+
+	/* Encryption of Red Key */
+	Status = XSecure_AesEncryptData(SecureClientInstance, XSECURE_AES_PUF_KEY,
+		XSECURE_AES_KEY_SIZE_256, (UINTPTR)Iv, (UINTPTR)InputData,
+		(UINTPTR)OutputData, DataLen, (UINTPTR)GcmTag);
+	if (Status != XST_SUCCESS) {
+		xil_printf("Data Encryption failed %x\n\r", Status);
+		goto END;
+	}
+
+	xil_printf("GCM Tag: \n\r");
+	XPuf_ShowData((u8*)GcmTag, XPUF_GCM_TAG_SIZE);
+
+	Xil_DCacheInvalidateRange((UINTPTR)OutputData, DataLen);
+	Xil_DCacheInvalidateRange((UINTPTR)GcmTag, XPUF_GCM_TAG_SIZE);
+
+END:
+	return Status;
+}
+
+/******************************************************************************/
+/**
+ *
+ * @brief	This function returns the IV for encryption of UDS and DME keys
+ * 		after incrementing.
+ *
+ * @param	Iv		 - Iv to be incremented.
+ * @param	IncVal		 - Increment value.
+ * 		For UDS, IncVal = 0x1
+ * 		For DME Priv Key0 Inc Val = 0x2
+ * 		For DME Priv Key1 Inc Val = 0x3
+ * 		For DME Priv Key2 Inc Val = 0x4
+ * 		For DME Priv Key3 Inc Val = 0x5
+ * @param	UpdatedIv	- Pointer to Incremented IV
+ *
+ ******************************************************************************/
+static void XPuf_GetIv(u8* Iv, u8 IncVal, u8* UpdatedIv)
+{
+	u8 Carry = 0;
+
+	for(int BIdx = XPUF_IV_LEN_IN_BYTES-1; BIdx >= 0; BIdx--) {
+		u8 Byte = Iv[BIdx];
+		u16 ByteSum = Byte + IncVal + Carry;
+		Carry = ByteSum >> 8U;
+		UpdatedIv[BIdx] = ByteSum & 0xFF;
+		if (Carry == 0) {
+			break;
+		}
+	}
+}
+
+/******************************************************************************/
+/**
+ *
+ * @brief	This function converts AES key to the format expected by
+ * 			xilsecure AES library.
+ *
+ * @param	Key			 - Pointer to the input key.
+ * @param	FormattedKey - Pointer to the formatted key.
+ * @param	KeyLen		 - Length of the input key in bytes.
+ *
+ * @return
+ *		- XST_SUCCESS - On successfully formatting of AES key.
+ *		- XST_FAILURE - On Failure.
+ *
+ ******************************************************************************/
+static int XPuf_FormatAesKey(const u8* Key, u8* FormattedKey, u32 KeyLen)
+{
+	int Status = XST_FAILURE;
+	u32 Index = 0U;
+	u32 Words = (KeyLen / XPUF_WORD_LENGTH);
+	u32 WordIndex = (Words / 2U);
+	u32* InputKey = (u32*)Key;
+	u32* OutputKey  = (u32*)FormattedKey;
+
+	if ((KeyLen != (XPUF_AES_KEY_SIZE_128BIT_WORDS * XPUF_WORD_LENGTH)) &&
+		(KeyLen != (XPUF_AES_KEY_SIZE_256BIT_WORDS * XPUF_WORD_LENGTH))) {
+		xil_printf("Only 128-bit keys and 256-bit keys are supported \r\n");
+		Status = XST_FAILURE;
+		goto END;
+	}
+
+	for(Index = 0U; Index < Words; Index++)
+	{
+		OutputKey[Index] = InputKey[WordIndex];
+		WordIndex++;
+		/*
+		 * AES word size = 128 bits
+		 * So to change the endianness, code should swap lower 64bits
+		 * with upper 64 bits
+		 * 64 bits = 8 bytes
+		 */
+		WordIndex = WordIndex % 8U;
+	}
+	Status = XST_SUCCESS;
+END:
+	return Status;
+}
+
+/******************************************************************************/
+/**
+ *
+ * @brief	This function programs encrypted UDS and DME private keys
+ *
+ * @param	NvmClientInstance Pointer to XilNvm client instance
+ *
+  * @return
+ *		- XST_SUCCESS - On successfully programming encrypted UDS and DME private keys
+ *		- XST_FAILURE - On Failure.
+ *
+ ******************************************************************************/
+static int XPuf_PrgmUdsAndDmeEfuses(XNvm_ClientInstance *NvmClientInstance)
+{
+	int Status = XST_FAILURE;
+	XPuf_EncryptedData *EncryptedData = &EncData;
+	XPuf_EncryptedData *PrgmData = &PrgmEncData;
+	u32* EncDataInWords;
+	u32* PrgmDataInWords;
+	u32 DmeModeVal = XPUF_DME_MODE_VAL;
+	u32 Index;
+
+	if (XPUF_PRGM_UDS == TRUE) {
+		EncDataInWords = (u32*)EncryptedData->UdsPrime;
+		PrgmDataInWords = (u32*)PrgmData->UdsPrime;
+
+		for (Index = 0; Index < XNVM_UDS_SIZE_IN_WORDS; Index++) {
+			PrgmDataInWords[Index] = XPuf_ReverseByteOrder(EncDataInWords[XNVM_UDS_SIZE_IN_WORDS - 1 - Index]);
+		}
+
+		Xil_DCacheInvalidateRange((UINTPTR)PrgmData->UdsPrime, sizeof(PrgmData->UdsPrime));
+
+		Status = XNvm_EfuseWriteDiceUds(NvmClientInstance, (u64)(UINTPTR)PrgmData->UdsPrime,
+			XPUF_ENV_MONITOR_DISABLE);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Failed to program encrypted UDS into eFuses \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Successfully programmed encrypted UDS into eFuses \r\n");
+		}
+
+	}
+
+	if (XPUF_PRGM_ENC_DME_PRIV_KEY_0 == TRUE) {
+		Status = XNvm_WriteDmePrivateKey(NvmClientInstance, 0U, (u64)(UINTPTR)EncryptedData->EncDmeKey0, XPUF_ENV_MONITOR_DISABLE);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Failed to program encrypted DME private key 0 into eFuses \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Successfully programmed encrypted DME private key 0 into eFuses \r\n");
+		}
+	}
+
+	if (XPUF_PRGM_ENC_DME_PRIV_KEY_1 == TRUE) {
+		Status = XNvm_WriteDmePrivateKey(NvmClientInstance, 1U, (u64)(UINTPTR)EncryptedData->EncDmeKey1, XPUF_ENV_MONITOR_DISABLE);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Failed to program encrypted DME private key 1 into eFuses \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Successfully programmed encrypted DME private key 1 into eFuses \r\n");
+		}
+	}
+
+	if (XPUF_PRGM_ENC_DME_PRIV_KEY_2 == TRUE) {
+		Status = XNvm_WriteDmePrivateKey(NvmClientInstance, 2U, (u64)(UINTPTR)EncryptedData->EncDmeKey2, XPUF_ENV_MONITOR_DISABLE);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Failed to program encrypted DME private key 2 into eFuses \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Successfully programmed encrypted DME private key 2 into eFuses \r\n");
+		}
+	}
+
+	if (XPUF_PRGM_ENC_DME_PRIV_KEY_3 == TRUE) {
+		Status = XNvm_WriteDmePrivateKey(NvmClientInstance, 3U, (u64)(UINTPTR)EncryptedData->EncDmeKey0, XPUF_ENV_MONITOR_DISABLE);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Failed to program encrypted DME private key 3 into eFuses \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Successfully programmed encrypted DME private key 3 into eFuses \r\n");
+		}
+	}
+
+	if (XPUF_PRGM_DME_MODE == TRUE) {
+		if (DmeModeVal > XPUF_MAX_DME_MODE_VAL) {
+			Status = XST_INVALID_PARAM;
+			goto END;
+		}
+		Status = XNvm_EfuseWriteDmeMode(NvmClientInstance, DmeModeVal, XPUF_ENV_MONITOR_DISABLE);
+		if (Status != XST_SUCCESS) {
+			xil_printf("Failed to program DME mode into eFuses \r\n");
+			goto END;
+		}
+		else {
+			xil_printf("Successfully programmed DME mode into eFuses \r\n");
+		}
+	}
+
+	Status = XST_SUCCESS;
+
+END:
+	return Status;
+}
+
+/******************************************************************************/
+/**
+ *
+ * @brief	This function changes the endianness of a 32-bit unsigned integer.
+ *		It takes a 32-bit unsigned integer as input and returns the integer
+ *		with its byte order reversed
+ *
+ * @param	Data - 32 bit unsigned integer provided as input
+ *
+ * @return	32 bit unsigned integer with its byte order reversed
+ *
+ ******************************************************************************/
+static u32 XPuf_ReverseByteOrder(u32 Data)
+ {
+	u32 Byte0, Byte1, Byte2, Byte3;
+	u32 Result;
+
+	Byte0 = (Data & XPUF_BYTE_0_MASK) << XPUF_SHIFT_24;
+	Byte1 = (Data & XPUF_BYTE_1_MASK) << XPUF_SHIFT_8;
+	Byte2 = (Data & XPUF_BYTE_2_MASK) >> XPUF_SHIFT_8;
+	Byte3 = (Data & XPUF_BYTE_3_MASK) >> XPUF_SHIFT_24;
+
+	Result = Byte0 | Byte1 | Byte2 | Byte3;
+
+	return Result;
+}
+
+/******************************************************************************/
+/**
+ *
+ * @brief	This function prints the data array.
+ *
+ * @param	Data - Pointer to the data to be printed.
+ * @param	Len  - Length of the data in bytes.
+ *
+ * @return	None
+ *
+ ******************************************************************************/
+static void XPuf_ShowData(const u8* Data, u32 Len)
+{
+	u32 Index;
+
+	for (Index = 0U; Index < Len; Index++) {
+		xil_printf("%02x", Data[Index]);
+	}
+	xil_printf("\r\n");
+}

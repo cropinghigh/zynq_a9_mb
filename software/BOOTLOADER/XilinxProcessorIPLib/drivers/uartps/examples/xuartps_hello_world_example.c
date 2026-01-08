@@ -1,0 +1,166 @@
+/******************************************************************************
+* Copyright (C) 2010 - 2021 Xilinx, Inc.  All rights reserved.
+* Copyright (C) 2022 - 2025 Advanced Micro Devices, Inc. All Rights Reserved.
+* SPDX-License-Identifier: MIT
+******************************************************************************/
+
+/*****************************************************************************/
+/**
+*
+* @file		xuartps_hello_world_example.c
+*
+* This file contains a design example using the XUartPs driver in polled mode
+*
+* The example uses the default setting in the XUartPs driver:
+*	. baud rate 9600
+*	. 8 bit data
+*	. 1 stop bit
+*	. no parity
+*
+* @note
+* This example requires an external SchmartModule connected to the pins for
+* the device to display the 'Hello World' message onto a hyper-terminal.
+*
+* MODIFICATION HISTORY:
+* <pre>
+* Ver   Who    Date     Changes
+* ----- ------ -------- -------------------------------------------------
+* 1.00a drg/jz 01/13/10 First Release
+* 1.04a  hk    22/04/13 Changed the baud rate in the example to 115200.
+*				Fix for CR#707879
+* 3.4    ms    01/23/17 Added xil_printf statement in main function to
+*                       ensure that "Successfully ran" and "Failed" strings
+*                       are available in all examples. This is a fix for
+*                       CR-965028.
+* 3.17  bkv    07/08/25 Fixed GCC Warning.
+*
+* </pre>
+******************************************************************************/
+
+/***************************** Include Files *********************************/
+
+#include "xparameters.h"
+#include "xuartps.h"
+#include "xil_printf.h"
+
+/************************** Constant Definitions *****************************/
+
+/*
+ * The following constants map to the XPAR parameters created in the
+ * xparameters.h file. They are defined here such that a user can easily
+ * change all the needed parameters in one place.
+ */
+#ifndef SDT
+#define UART_DEVICE_ID                  XPAR_XUARTPS_0_DEVICE_ID
+#else
+#define	XUARTPS_BASEADDRESS		XPAR_XUARTPS_0_BASEADDR
+#endif
+
+/**************************** Type Definitions *******************************/
+
+/***************** Macros (Inline Functions) Definitions *********************/
+
+/************************** Function Prototypes ******************************/
+#ifndef SDT
+int UartPsHelloWorldExample(u16 DeviceId);
+#else
+int UartPsHelloWorldExample(UINTPTR BaseAddress);
+#endif
+/************************** Variable Definitions *****************************/
+
+XUartPs Uart_Ps;		/* The instance of the UART Driver */
+
+/*****************************************************************************/
+/**
+*
+* Main function to call the Hello World example.
+*
+*
+* @return
+*		- XST_FAILURE if the Test Failed .
+*		- A non-negative number indicating the number of characters
+*		  sent.
+*
+* @note		None
+*
+******************************************************************************/
+int main(void)
+{
+	int Status;
+
+	/*
+	 * Run the Hello World example , specify the the Device ID that is
+	 * generated in xparameters.h
+	 */
+#ifndef SDT
+	Status = UartPsHelloWorldExample(UART_DEVICE_ID);
+#else
+	Status = UartPsHelloWorldExample(XUARTPS_BASEADDRESS);
+#endif
+	if (Status == XST_FAILURE) {
+		xil_printf("Uartps hello world Example Failed\r\n");
+		return XST_FAILURE;
+	}
+
+	xil_printf("Successfully ran Uartps hello world Example\r\n");
+
+	return Status;
+}
+
+/****************************************************************************/
+/**
+*
+* This function sends 'Hello World' to an external terminal in polled mode.
+* The purpose of this function is to illustrate how to use the XUartPs driver.
+*
+*
+* @param	DeviceId is the unique ID for the device from hardware build.
+*
+* @return
+*		- XST_FAILURE if the UART driver could not be initialized
+*		  successfully.
+*		- A non-negative number indicating the number of characters
+*		  sent.
+*
+* @note		None.
+*
+****************************************************************************/
+#ifndef SDT
+int UartPsHelloWorldExample(u16 DeviceId)
+#else
+int UartPsHelloWorldExample(UINTPTR BaseAddress)
+#endif
+{
+	u8 HelloWorld[] = "Hello World";
+	u32 SentCount = 0;
+	int Status;
+	XUartPs_Config *Config;
+
+	/*
+	 * Initialize the UART driver so that it's ready to use
+	 * Look up the configuration in the config table and then initialize it.
+	 */
+#ifndef SDT
+	Config = XUartPs_LookupConfig(DeviceId);
+#else
+	Config = XUartPs_LookupConfig(BaseAddress);
+#endif
+	if (NULL == Config) {
+		return XST_FAILURE;
+	}
+
+	Status = XUartPs_CfgInitialize(&Uart_Ps, Config, Config->BaseAddress);
+	if (Status != XST_SUCCESS) {
+		return XST_FAILURE;
+	}
+
+	XUartPs_SetBaudRate(&Uart_Ps, 115200);
+
+	while (SentCount < (sizeof(HelloWorld) - 1)) {
+		/* Transmit the data */
+		SentCount += XUartPs_Send(&Uart_Ps,
+					   &HelloWorld[SentCount], 1);
+	}
+
+	return SentCount;
+}

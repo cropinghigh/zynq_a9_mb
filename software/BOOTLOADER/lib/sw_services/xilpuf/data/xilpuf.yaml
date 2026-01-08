@@ -1,0 +1,66 @@
+# Copyright (C) 2023 - 2025 Advanced Micro Devices, Inc.  All rights reserved.
+# SPDX-License-Identifier: MIT
+
+%YAML 1.2
+---
+title: Bindings for xilpuf library.
+
+maintainers:
+  - Harsha, Harsha <harsha.harsha@amd.com>
+  - Akula, Kalyani <kalyani.akula@amd.com>
+  - Challa, Durga <durga.challa@amd.com>
+
+type: library
+
+description: Xilinx PUF Library provides interface for registration and regeneration.
+
+supported_processors:
+  - psv_cortexa72
+  - psv_cortexr5
+  - psv_pmc
+  - microblaze
+  - psx_pmc
+  - pmc
+  - psx_cortexa78
+  - cortexa78
+  - psx_cortexr52
+  - cortexr52
+  - microblaze_riscv
+
+supported_os:
+  - standalone
+
+examples:
+  xilpuf_enc_dec_data_example.c:
+  xilpuf_example.c:
+    - dependency_files:
+      - xilpuf_example.h
+  xilpuf_enc_dec_data_client_example.c:
+  xilpuf_client_example.c:
+    - dependency_files:
+      - xilpuf_example.h
+  xilpuf_versal_net_example.c:
+    - dependency_files:
+      - xilpuf_versal_net_example.h
+  xilpuf_spartan_ultrascale_plus_example.c:
+    - dependency_files:
+      - xilpuf_spartan_ultrascale_plus_example.h
+  xilpuf_ssit_client_example.c:
+    - dependency_files:
+      - xilpuf_example.h
+
+  condition : |
+    examples = []
+    if platform in ["Versal", "VersalNet", "Versal_2VE_2VM"]:
+      if proc in ["microblaze", "psv_cortexa72", "psv_cortexr5", "psx_cortexa78", "psx_cortexr52", "cortexa78", "cortexr52"]:
+        examples += ["xilpuf_enc_dec_data_example.c", "xilpuf_example.c", "xilpuf_client_example.c",
+                     "xilpuf_enc_dec_data_client_example.c"]
+    if platform in ["VersalNet", "Versal_2VE_2VM"]:
+      if proc in ["microblaze", "psx_cortexa78", "psx_cortexr52", "cortexa78", "cortexr52"]:
+        examples += ["xilpuf_versal_net_example.c"]
+    if platform in ["Versal"]:
+      if proc in ["microblaze", "psv_cortexa72", "psv_cortexr5"]:
+        examples += ["xilpuf_ssit_client_example.c"]
+    if "spartanuplus" in variant:
+      if proc in ["microblaze", "microblaze_riscv"]:
+        examples += ["xilpuf_spartan_ultrascale_plus_example.c"]

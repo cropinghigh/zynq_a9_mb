@@ -1,0 +1,24 @@
+# Copyright (c) 2023 Advanced Micro Devices, Inc. All Rights Reserved.
+# SPDX-License-Identifier: MIT
+%YAML 1.2
+---
+title: Bindings for cortexr52 cpu
+
+maintainers:
+  - Mubin Sayyed <mubin.usman.sayyed@xilinx.com>
+
+config:
+    - XCortexr52_Config
+
+properties:
+  compatible:
+    OneOf:
+      - items:
+        - enum:
+          - arm,cortex-r52
+
+required:
+    - xlnx,timestamp-clk-freq
+    - cpu-frequency
+    - reg
+...
