@@ -2,6 +2,8 @@
 
 # !!!Before ordering the boards or any components, please read the entire readme, and all "Requirements" sections!!!
 
+## Версия на русском: [README_RU.md](README_RU.md)
+
 ## Hardware:
 
 ![3d rendered PCB front](images/3d_view_f.png)
@@ -310,7 +312,7 @@ Replace -j4 with the number of cores your CPU have. Pre-built binaries for each 
         5  xc7z010
     ```
 
-    If it's an error message instead, it's the problem with either Zynq, or the connection to it. To rule out connection issues, try unplugging and plugging back Platform cable(run "disconnect" command and kill all running hw_server processes in system before connecting again), wiggle the JTAG connector around and check the board power. If it still doesn't work - you likely will have to reball the SoC again.
+    If it's an error message instead, it's the problem with either Zynq, or the connection to it. To rule out connection issues, try unplugging and plugging back Platform cable(run "disconnect" command and kill all running hw_server processes in system before connecting again, then "connect" again), wiggle the JTAG connector around and check the board power. If it still doesn't work - you likely will have to reball the SoC again.
 
 2. Loading the FSBL
 
