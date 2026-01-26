@@ -15,14 +15,14 @@
 - 6-layer pcb, moderately cheap to manufacture with JLCPCB, achieved by using Via In Pad technology
 - Full 512MB two-chip DDR3 support
 - Peripheral interfaces available on MIO pins: USB(Device/OTG), Gigabit ethernet, SD card(two switchable slots), eMMC+QSPI as boot media, I2C, UART, DS1307 RTC, XADC direct input
-- Dedicated PL display header with 5 LVDS pairs, 5v/3.3v power lines, I2C and two GPIOs. Designed to be directly connectable to HDMI or MIPI DSI connector with simple extension board
+- Dedicated PL display header with 5 TMDS pairs, 5v/3.3v power lines, I2C and two GPIOs. Designed to be directly connectable to HDMI connector with simple extension board
 - 10 matched length differential pairs available on PL_IO_A
 - 22 matched length single ended CMOS lines available on PL_IO_B
 - 44(+2 on PL_IO_A) general purpose CMOS lines available on PL_IO_C and PL_IO_D, effectively utilizing all 34 and 35 FPGA banks
 
 PDF schematic is available at [hardware/schematic.pdf](hardware/schematic.pdf)
 
-Component list(BOM) is available at [hardware/zynq_test_components_1.2.ods](hardware/zynq_test_components_1.2.ods). Values that are present on Antminer board, but not in enough count for new board, marked with red. Values that are not present on Antminer board are marked with yellow. Any component on Antminer board from column "Antminer S9 Board Reference" could be soldered to any position from column "Reference" to the new board.
+Component list(BOM) is available at [hardware/zynq_test_components_1.2.ods](hardware/zynq_test_components_1.2.ods). Values that are present on Antminer board, but not in enough amount for new board, marked with red. Values that are not present on Antminer board are marked with yellow. Any component on Antminer board from column "Antminer S9 Board Reference" could be soldered to any position from column "Reference" to the new board.
 
 ### To order from JLCPCB
 
@@ -46,7 +46,7 @@ Use file [hardware/gerbers/zynq_test.zip](hardware/gerbers/zynq_test.zip) and ne
 - PCBs themselves, ordered earlier
 - A working Antminer S9 board
 - Bunch of components that are not present on the miner board(in [hardware/zynq_test_components_1.2.ods](hardware/zynq_test_components_1.2.ods) marked with yellow - not present at all, and red - present, but not enough). Some components(U11,eMMC chip), can be changed to anything that is pin compatible to the specified part and has same electrical interface(so you can put bigger or smaller eMMC if needed). Also, if you don't need some of the functionality(e.g. eMMC, USB or RTC), you can just ignore the chip associated with it and all it's surroundings. Pay attention to the component footprints/cases when ordering - they are specified in separate column.
-- Soldering iron and hot air rework station.
+- Soldering iron and hot air rework station, tweezers, some container for the extra balls during reballing to fall into.
 - Something as the bottom header for the boards - specialized tool is preferred, but just iron should work as well.
 - Flux, suitable for SMD and BGA soldering(i use RMA218)
 - Tools for reballing - special stand with spring holder for the chip, 0.8mm spacing;0.5mm ball stencil for Zynq and DDR chips, 0.5mm spacing;0.3mm ball stencil - in case you will need to reball the eMMC, bunch of 0.45mm and 0.3mm balls(yes, you want the 0.45mm ones for zynq and ddr, because they are much easier to work with when using cheap chinese 0.5mm stencils).
@@ -108,11 +108,11 @@ Use file [hardware/gerbers/zynq_test.zip](hardware/gerbers/zynq_test.zip) and ne
 
     ![Reballing process](images/reballing_3.jpg)
 
-    After that, slowly heat up stencil with chip with hot air at temp around 320-350drg.C. You will see as the balls start to smelt and fall deeper in holes. If some of them stay afloat no matter the heat, you could very carefully poke them down with tweezers or other sharp tool. If they start to rapidly jump out on flux vapour, slow down the heating.
+    After that, slowly heat up stencil with chip with hot air at temp around 320-350drg.C. You will see as the balls start to melt and fall deeper in holes. If some of them stay afloat no matter the heat, you could very carefully poke them down with tweezers or other sharp tool. If they start to rapidly jump out on flux vapour, slow down the heating.
 
     ![Reballing process](images/reballing_4.jpg)
 
-    Carefully remove IC from the stencil. If one or two balls are missing, you can gently place them manually with tweezers. Add reasonable amount of flux and slowly heat the chip again with same hot air configuration. That step is needed to fix any misalignments of stencil and pads from before.
+    Carefully remove IC from the stencil. If one or two balls are missing, you can gently place them manually with tweezers now. Add reasonable amount of flux and slowly heat the chip again with same hot air configuration. That step is needed to fix any misalignments of stencil and pads from before.
 
     After melting all balls, remove the heat and let it cool. You should get a surface with almost ideally equal height balls. Remove all flux from it.
 
@@ -171,14 +171,14 @@ Use file [hardware/gerbers/zynq_test.zip](hardware/gerbers/zynq_test.zip) and ne
     ![Testing DDR](images/memtest_1.jpg)
     ![Testing DDR](images/memtest_2.jpg)
 
-    Hook up the JTAG and UART, and power on the board. Then, load the FSBL with xsdb(more on that in Flashing section). It should load, print the voltagtes and temperatures, and stop at "Boot mode is JTAG". If it says something about DDR fault, then likely the DDR chips soldering is bad. Remove them, reball and try again. At this point it's recommended run the memtest to check memory integrity and eye opening.
+    Hook up the JTAG and UART, and power on the board. Then, load the FSBL with xsdb(more on that in Flashing section). It should run, print the voltagtes and temperatures, and stop at "Boot mode is JTAG". If it says something about DDR fault, then likely the DDR chips soldering is bad. Remove them, reball and try again. At this point it's recommended run the memtest to check memory integrity and eye opening.
 
     Normal values for v1.1 board are no errors on entire 511MB test, 70-80% read eye and 60-70% write eye.
 
 
 7. Finishing the assembly
 
-    At this point, you just need to solder in everything that isn't there yet. Pay special attention to R158/R161 in I2C block(it's selecting either 5V or 3.3V I2C interface, never install both at the same time). You can connect an RTC battery or ionistor to BT1 terminals if you need to keep time, but remove D17, if it's not a rechargeable one. If you don't need some of the connectors, you can also don't solder them in, or do it later. R51/R52 are not required. ESD protection diodes are not neccesary but highly recommended.
+    At this point, you just need to solder in everything that isn't there yet. Pay special attention to R158/R161 in I2C block(it's selecting either 5V or 3.3V I2C interface, never install both at the same time). You can connect an RTC battery or ionistor to BT1 terminals if you need to keep time, but remove D17, if it's not a rechargeable one. If you don't need some of the connectors, you can also don't solder them in, or do it later. R51/R52 are not required. ESD protection diodes are not neccesary but highly recommended(I just ordered them in a wrong case, so they don't present on pictures. Double check the component number and casing!)
 
     ![Final board image](images/final_board_f.jpg)
     ![Final board image](images/final_board_b.jpg)
@@ -248,7 +248,7 @@ Replace -j4 with the number of cores your CPU have. Pre-built binaries for each 
 
 7. Making DT overlays
 
-    In software/KERNEL/dtb-overlays for each overlay you want(OVERLAY_NAME.dts -> OVERLAY_NAME.dtb) run:
+    In software/KERNEL/dtb-overlays for each overlay you want(OVERLAY_NAME.dtso -> OVERLAY_NAME.dtbo) run:
 
     `./make_overlay.sh OVERLAY_NAME`
 
@@ -730,7 +730,7 @@ Replace -j4 with the number of cores your CPU have. Pre-built binaries for each 
 
     Now you need to make a new environment for u-boot, containing some configuration.
 
-    First, recover the MAC address from the very first step of assembly, when you copied it from the working antminer board. Set it up with "setenv ethaddr MAC::ADDR::FROM::MINER"
+    First, recover the MAC address from the very first step of assembly, when you copied it from the working antminer board. Set it up with "setenv ethaddr MAC:ADDR:FROM:MINER"
 
     Then, configure the boot parameters, and save environment to SPI flash:
     ```
